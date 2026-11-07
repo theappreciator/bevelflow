@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bevelflow-local",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "source ~/.nvm/nvm.sh && nvm use 26 >/dev/null && npm run build && npm run dev:api"],
+      "port": 8788
+    }
+  ]
+}

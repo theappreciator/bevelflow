@@ -31,6 +31,10 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },
+  server: {
+    // `npm run dev:api` runs the Pages Functions API locally on 8788.
+    proxy: { "/api": "http://localhost:8788" },
+  },
   plugins: [
     VitePWA({
       registerType: "autoUpdate",
@@ -53,10 +57,11 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
         // Never serve the cached app shell for Cloudflare Access routes
         // (login, logout, auth callback); they must reach the network.
-        navigateFallbackDenylist: [/^\/cdn-cgi\//],
+        // Same for the API: always live data from the network.
+        navigateFallbackDenylist: [/^\/cdn-cgi\//, /^\/api\//],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/cdn-cgi/"),
+            urlPattern: ({ url }) => url.pathname.startsWith("/cdn-cgi/") || url.pathname.startsWith("/api/"),
             handler: "NetworkOnly",
           },
         ],

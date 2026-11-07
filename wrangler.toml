@@ -1,0 +1,20 @@
+# Cloudflare Pages config. When this file exists it is the source of truth for
+# the Pages project's bindings and variables (the dashboard can't edit them).
+name = "bevelflow"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Cloudflare Access: used by functions/api/_middleware.ts to verify the login token.
+ACCESS_TEAM_DOMAIN = "white-sea-f1e0.cloudflareaccess.com"
+ACCESS_AUD = "e6a46e7c99e339a6f4b6afb996d5155e3cf08fc40982a783c19f3ced8d6f03d1"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bevelflow-db"
+database_id = "d366e537-628a-4671-ab0d-d10c3a021f8a"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "bevelflow-photos"
