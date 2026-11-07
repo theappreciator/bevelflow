@@ -75,10 +75,10 @@ const PHONE_ICON = [
 ];
 
 /** Icon link; rendered dimmed and inert when there's nothing to email/call. */
-function contactButton(href: string | null, label: string, paths: string[]): HTMLElement {
+function contactButton(kind: "email" | "call", href: string | null, label: string, paths: string[]): HTMLElement {
   return href
-    ? h("a", { class: "contact-btn", href, "aria-label": label, title: label }, icon(paths))
-    : h("span", { class: "contact-btn is-disabled", "aria-hidden": "true" }, icon(paths));
+    ? h("a", { class: `contact-btn is-${kind}`, href, "aria-label": label, title: label }, icon(paths))
+    : h("span", { class: `contact-btn is-${kind} is-disabled`, "aria-hidden": "true" }, icon(paths));
 }
 
 function row(r: RecordSummary): HTMLLIElement {
@@ -119,8 +119,8 @@ function row(r: RecordSummary): HTMLLIElement {
     h(
       "div",
       { class: "record-actions" },
-      contactButton(email ? `mailto:${encodeURI(email)}` : null, `Email ${name}`, EMAIL_ICON),
-      contactButton(phone ? telHref(phone) : null, `Call ${name}`, PHONE_ICON),
+      contactButton("email", email ? `mailto:${encodeURI(email)}` : null, `Email ${name}`, EMAIL_ICON),
+      contactButton("call", phone ? telHref(phone) : null, `Call ${name}`, PHONE_ICON),
     ),
   );
 }

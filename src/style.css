@@ -215,26 +215,39 @@ a {
 .contact-btn {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--border);
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  color: var(--primary);
+  background: var(--btn-bg);
+  color: #fff;
+}
+
+.contact-btn:active {
+  filter: brightness(0.9);
+}
+
+.contact-btn.is-email {
+  --btn-bg: #2563eb;
+}
+
+.contact-btn.is-call {
+  --btn-bg: #16a34a;
 }
 
 .contact-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .contact-btn.is-disabled {
+  --btn-bg: var(--border);
   color: var(--muted);
-  opacity: 0.35;
+  opacity: 0.6;
 }
 
 .thumb-wrap {
