@@ -825,3 +825,58 @@ a {
   font-family: ui-monospace, monospace;
   color: var(--muted);
 }
+
+/* ---- Printing ----
+   The record screen's "Print QR code" button uses the normal system print dialog.
+   Only #print-label (QR code + public ID) is printed; everything else is hidden. */
+#print-label {
+  display: none;
+}
+
+.btn-print {
+  flex: none;
+  width: 100%;
+}
+
+@media print {
+  @page {
+    margin: 8mm;
+  }
+
+  body {
+    display: block;
+    min-height: 0;
+    background: #fff;
+  }
+
+  body > *:not(#print-label) {
+    display: none !important;
+  }
+
+  #print-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3mm;
+    color: #000;
+    break-inside: avoid;
+  }
+
+  .print-label-qr {
+    width: 50mm;
+    height: 50mm;
+  }
+
+  .print-label-qr svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .print-label-id {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 16pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+}

@@ -20,6 +20,7 @@ function route(): void {
   const isCurrent = (): boolean => current === navigation;
   const path = location.hash.replace(/^#/, "") || "/";
   window.scrollTo(0, 0);
+  document.getElementById("print-label")?.remove(); // only the record screen has one
 
   const recordMatch = /^\/records\/([^/]+)$/.exec(path);
   if (path === "/new") renderRecord(app, null, isCurrent);

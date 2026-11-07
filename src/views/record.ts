@@ -101,6 +101,18 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const publicIdRow = h("div", { class: "public-id", hidden: true }, h("span", { class: "muted" }, "Record ID"), publicIdValue);
   /** QR code linking to /q/<public id>; drawn in the browser, never stored. */
   const qrBox = h("div", { class: "record-qr", role: "img", hidden: true });
+  // What gets printed: just the QR code and the public ID. It lives outside #app so
+  // print styles can hide everything else (see "Printing" in style.css).
+  const printQr = h("div", { class: "print-label-qr" });
+  const printId = h("div", { class: "print-label-id" });
+  document.getElementById("print-label")?.remove();
+  const printLabel = h("div", { id: "print-label", "aria-hidden": "true" }, printQr, printId);
+  document.body.append(printLabel);
+  const printBtn = h(
+    "button",
+    { class: "btn btn-block btn-print", type: "button", hidden: true, onclick: () => window.print() },
+    "Print QR code",
+  );
   let qrFor = "";
 
   const workflowList = h("ul", { class: "contact-list" });
@@ -167,6 +179,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     workflowSection,
     contactSection,
     meta,
+    printBtn,
     qrBox,
   );
 
@@ -216,6 +229,9 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     if (r.publicId && r.publicId !== qrFor) {
       qrFor = r.publicId;
       qrBox.innerHTML = qrSvg(location.origin + qrPath(r.publicId), "/icon.svg");
+      printQr.innerHTML = qrBox.innerHTML;
+      printId.textContent = formatPublicId(r.publicId);
+      printBtn.hidden = false;
       qrBox.setAttribute("aria-label", `QR code for record ${formatPublicId(r.publicId)}`);
       qrBox.hidden = false;
     }
