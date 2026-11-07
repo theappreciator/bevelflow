@@ -40,6 +40,8 @@ export interface RecordSummary {
   lastName: string;
   email: string;
   phone: string;
+  /** Whole cents, or null when no estimate was entered. */
+  estimatedCostCents: number | null;
   workflowState: WorkflowState;
   createdAt: number;
   updatedAt: number;

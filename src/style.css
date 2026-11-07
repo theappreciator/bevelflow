@@ -212,6 +212,38 @@ a {
   color: var(--muted);
 }
 
+.state-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.state-section .state-heading {
+  margin-bottom: 0;
+}
+
+.day-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 2px 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.day-summary {
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.day-total {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .state-count {
   min-width: 22px;
   height: 22px;

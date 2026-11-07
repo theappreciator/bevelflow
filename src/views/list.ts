@@ -1,5 +1,6 @@
 import { listRecords } from "../api";
 import { formatDateTime, h } from "../dom";
+import { formatUsd } from "../money";
 import { formatPhone } from "../phone";
 import { photoUrl, WORKFLOW_STATES, type RecordSummary } from "../../shared/types";
 import { errorMessage, handleSessionExpired } from "./common";
@@ -91,9 +92,64 @@ function sections(records: RecordSummary[]): HTMLElement[] {
           label,
           h("span", { class: "state-count", "aria-label": `${inState.length} records` }, inState.length),
         ),
-        h("ul", { class: "record-list" }, ...inState.map(row)),
+        ...dayGroups(inState),
       ),
     ];
+  });
+}
+
+const dayFormat = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
+const dayFormatWithYear = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+/** "Today", "Yesterday", "Thu, Nov 5", or with the year when it isn't this year. */
+function dayLabel(ms: number): string {
+  const d = new Date(ms);
+  const today = new Date();
+  const startOf = (x: Date): number => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const daysAgo = Math.round((startOf(today) - startOf(d)) / 86_400_000);
+  if (daysAgo === 0) return "Today";
+  if (daysAgo === 1) return "Yesterday";
+  return (d.getFullYear() === today.getFullYear() ? dayFormat : dayFormatWithYear).format(d);
+}
+
+/**
+ * Splits a section's records (already newest first) into one group per day they
+ * were created (in the phone's time zone), each headed by the day, the number of
+ * records and the total estimated cost (records with no estimate count as $0).
+ */
+function dayGroups(records: RecordSummary[]): HTMLElement[] {
+  const groups = new Map<string, RecordSummary[]>();
+  for (const r of records) {
+    const d = new Date(r.createdAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const list = groups.get(key);
+    if (list) list.push(r);
+    else groups.set(key, [r]);
+  }
+  return [...groups.values()].map((dayRecords) => {
+    const total = dayRecords.reduce((sum, r) => sum + (r.estimatedCostCents ?? 0), 0);
+    const count = dayRecords.length;
+    return h(
+      "div",
+      { class: "day-group" },
+      h(
+        "h3",
+        { class: "day-heading" },
+        h("span", null, dayLabel(dayRecords[0]!.createdAt)),
+        h(
+          "span",
+          { class: "day-summary" },
+          `${count} ${count === 1 ? "item" : "items"} · `,
+          h("span", { class: "day-total" }, formatUsd(total)),
+        ),
+      ),
+      h("ul", { class: "record-list" }, ...dayRecords.map(row)),
+    );
   });
 }
 

@@ -14,6 +14,13 @@ export function parseDollarsToCents(input: string): number | null | "invalid" {
   return m[1] && cents !== 0 ? -cents : cents;
 }
 
+/** 123456 -> "$1,234.56", -5 -> "-$0.05". For totals and other read-only display. */
+export function formatUsd(cents: number): string {
+  const abs = Math.abs(cents);
+  const dollars = Math.floor(abs / 100).toLocaleString("en-US");
+  return `${cents < 0 ? "-" : ""}$${dollars}.${String(abs % 100).padStart(2, "0")}`;
+}
+
 /** 2512 -> "25.12", 3000 -> "30.00", -5 -> "-0.05". */
 export function formatCents(cents: number): string {
   const abs = Math.abs(cents);

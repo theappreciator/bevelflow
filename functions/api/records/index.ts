@@ -9,7 +9,7 @@ const LIST_LIMIT = 500;
 export const onRequestGet: Handler = async ({ env }) => {
   try {
     const { results } = await env.DB.prepare(
-      `SELECT r.id, r.first_name, r.last_name, r.email, r.phone, r.workflow_state, r.created_at, r.updated_at,
+      `SELECT r.id, r.first_name, r.last_name, r.email, r.phone, r.estimated_cost_cents, r.workflow_state, r.created_at, r.updated_at,
               (SELECT COUNT(*) FROM photos p WHERE p.record_id = r.id) AS photo_count,
               (SELECT p.id FROM photos p WHERE p.record_id = r.id ORDER BY p.created_at LIMIT 1) AS thumbnail_photo_id
          FROM records r
