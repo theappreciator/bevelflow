@@ -49,6 +49,7 @@ export function parseFields(body: Record<string, unknown>): Partial<RecordFields
 
 export interface RecordRow {
   id: string;
+  public_id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -93,6 +94,7 @@ export function toSummary(r: SummaryRow): RecordSummary {
 export function toDetail(r: RecordRow, photos: PhotoRow[]): RecordDetail {
   return {
     id: r.id,
+    publicId: r.public_id,
     firstName: r.first_name,
     lastName: r.last_name,
     email: r.email,

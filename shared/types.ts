@@ -50,6 +50,8 @@ export interface RecordSummary {
 
 export interface RecordDetail extends RecordFields {
   id: string;
+  /** 8-character public ID, stored without a dash (see shared/publicId.ts). */
+  publicId: string;
   createdAt: number;
   updatedAt: number;
   createdBy: string;

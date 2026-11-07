@@ -10,6 +10,7 @@ import {
   type RecordFields,
   type WorkflowState,
 } from "../../shared/types";
+import { formatPublicId } from "../../shared/publicId";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
 
 type TextKey = "firstName" | "lastName" | "email" | "phone";
@@ -77,6 +78,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const cancelBtn = h("button", { class: "btn btn-block", type: "button", onclick: () => void cancel() }, "Cancel");
   const status = h("p", { class: "form-status", role: "status" });
   const meta = h("div", { class: "record-meta muted" });
+  const publicIdValue = h("span", { class: "public-id-value" });
+  const publicIdRow = h("div", { class: "public-id", hidden: true }, h("span", { class: "muted" }, "Record ID"), publicIdValue);
 
   const photoHeading = h("h2", null);
   const photoGrid = h("div", { class: "photo-grid" });
@@ -103,6 +106,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     h(
       "div",
       { class: "record-fields" },
+      publicIdRow,
       ...textFields.map(([, , el]) => el),
       h(
         "label",
@@ -151,6 +155,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     costInput.value = r.estimatedCostCents === null ? "" : formatCents(r.estimatedCostCents);
     stateSelect.value = r.workflowState;
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
+    publicIdValue.textContent = formatPublicId(r.publicId);
+    publicIdRow.hidden = !r.publicId;
     meta.replaceChildren(
       h("div", null, `Created ${formatDateTime(r.createdAt)}`, r.createdBy ? ` by ${r.createdBy}` : ""),
       h("div", null, `Last modified ${formatDateTime(r.updatedAt)}`, r.updatedBy ? ` by ${r.updatedBy}` : ""),

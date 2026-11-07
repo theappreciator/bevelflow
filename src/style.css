@@ -30,6 +30,11 @@
   box-sizing: border-box;
 }
 
+/* Keep the hidden attribute working on elements that set their own display. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -343,6 +348,21 @@ a {
 
 .field-error {
   color: var(--danger);
+}
+
+.public-id {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.public-id-value {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  user-select: all;
 }
 
 /* "$" inside the left edge of the cost input. */
