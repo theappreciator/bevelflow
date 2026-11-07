@@ -1,0 +1,24 @@
+{
+  "name": "bevelflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theappreciator/bevelflow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/theappreciator/bevelflow/issues"
+  },
+  "homepage": "https://github.com/theappreciator/bevelflow#readme",
+  "devDependencies": {
+    "wrangler": "^4.158.0"
+  }
+}
