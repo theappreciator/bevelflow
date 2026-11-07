@@ -1,7 +1,7 @@
 import type { Handler } from "../../../server/env";
 import { errorResponse, json, readJson } from "../../../server/http";
 import { loadDetail, parseFields, toSummary, type SummaryRow } from "../../../server/records";
-import { generatePublicId } from "../../../shared/publicId";
+import { insertWithUniquePublicId } from "../../../server/publicIds";
 
 const LIST_LIMIT = 500;
 
@@ -35,31 +35,24 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
                             workflow_state, created_at, updated_at, created_by, updated_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
-    // Public IDs are random; on the (very unlikely) clash with an existing one, try another.
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await insert
-          .bind(
-            id,
-            generatePublicId(),
-            f.firstName ?? "",
-            f.lastName ?? "",
-            f.email ?? "",
-            f.phone ?? "",
-            f.estimatedCostCents ?? null,
-            f.workflowState ?? "new",
-            now,
-            now,
-            data.userEmail,
-            data.userEmail,
-          )
-          .run();
-        break;
-      } catch (err) {
-        const clash = String(err).includes("UNIQUE") && String(err).includes("public_id");
-        if (!clash || attempt >= 5) throw err;
-      }
-    }
+    await insertWithUniquePublicId(env.DB, (publicId) =>
+      insert
+        .bind(
+          id,
+          publicId,
+          f.firstName ?? "",
+          f.lastName ?? "",
+          f.email ?? "",
+          f.phone ?? "",
+          f.estimatedCostCents ?? null,
+          f.workflowState ?? "new",
+          now,
+          now,
+          data.userEmail,
+          data.userEmail,
+        )
+        .run(),
+    );
     return json(await loadDetail(env.DB, id), 201);
   } catch (err) {
     return errorResponse(err);
