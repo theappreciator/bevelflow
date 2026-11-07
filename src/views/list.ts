@@ -1,7 +1,7 @@
 import { listRecords } from "../api";
 import { formatDateTime, h } from "../dom";
 import { formatPhone } from "../phone";
-import { photoUrl, type RecordSummary } from "../../shared/types";
+import { photoUrl, WORKFLOW_STATES, type RecordSummary } from "../../shared/types";
 import { errorMessage, handleSessionExpired } from "./common";
 import { contactButton } from "./contact";
 
@@ -54,9 +54,9 @@ export function renderList(root: HTMLElement): void {
     try {
       const records = await listRecords();
       list.replaceChildren(
-        records.length === 0
-          ? h("p", { class: "muted center" }, "No records yet. Tap “+ New” to add one.")
-          : h("ul", { class: "record-list" }, ...records.map(row)),
+        ...(records.length === 0
+          ? [h("p", { class: "muted center" }, "No records yet. Tap “+ New” to add one.")]
+          : sections(records)),
       );
     } catch (err) {
       handleSessionExpired(err);
@@ -69,6 +69,32 @@ export function renderList(root: HTMLElement): void {
   }
 
   void load();
+}
+
+/**
+ * One section per workflow state, in the workflow order (New, In progress, …).
+ * Records keep the API's newest-first order inside each section; states with no
+ * records are left out.
+ */
+function sections(records: RecordSummary[]): HTMLElement[] {
+  return WORKFLOW_STATES.flatMap(({ value, label }) => {
+    const inState = records.filter((r) => r.workflowState === value);
+    if (inState.length === 0) return [];
+    const headingId = `state-${value}`;
+    return [
+      h(
+        "section",
+        { class: "state-section", "aria-labelledby": headingId },
+        h(
+          "h2",
+          { class: "state-heading", id: headingId },
+          label,
+          h("span", { class: "state-count", "aria-label": `${inState.length} records` }, inState.length),
+        ),
+        h("ul", { class: "record-list" }, ...inState.map(row)),
+      ),
+    ];
+  });
 }
 
 /** "Last, First" — or whichever part exists. */
