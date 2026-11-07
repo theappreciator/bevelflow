@@ -9,3 +9,14 @@ body {
   display: grid;
   place-items: center;
 }
+
+.app-version {
+  position: fixed;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  opacity: 0.6;
+}

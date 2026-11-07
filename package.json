@@ -1,6 +1,6 @@
 {
   "name": "bevelflow",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Bevelflow PWA",
   "scripts": {
     "dev": "vite",
@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/theappreciator/bevelflow#readme",
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@vite-pwa/assets-generator": "^2.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
