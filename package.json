@@ -1,6 +1,6 @@
 {
   "name": "bevelflow",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Bevelflow PWA",
   "scripts": {
     "dev": "vite",

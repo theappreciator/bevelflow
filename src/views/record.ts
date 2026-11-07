@@ -14,6 +14,7 @@ import {
 } from "../../shared/types";
 import { formatPublicId, qrPath } from "../../shared/publicId";
 import { qrSvg } from "../qr";
+import { labelPng, needsShareToPrint } from "../label";
 import type { ContactEvent } from "../../shared/types";
 import { formatPhone } from "../phone";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
@@ -44,6 +45,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const addedThisVisit = new Set<string>();
   let uploading = 0;
   let busy = false;
+  /** iOS: label image (QR + ID) ready to hand to the Share sheet for printing. */
+  let labelFile: File | null = null;
   /** An immediate workflow-state save is in progress. */
   let stateSaving = false;
 
@@ -110,7 +113,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   document.body.append(printLabel);
   const printBtn = h(
     "button",
-    { class: "btn btn-block btn-print", type: "button", hidden: true, onclick: () => window.print() },
+    { class: "btn btn-block btn-print", type: "button", hidden: true, onclick: () => onPrint() },
     "Print QR code",
   );
   let qrFor = "";
@@ -232,6 +235,18 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       printQr.innerHTML = qrBox.innerHTML;
       printId.textContent = formatPublicId(r.publicId);
       printBtn.hidden = false;
+      // Prepared now so a tap can open the iOS Share sheet straight away (iOS only
+      // allows that directly in response to the tap, not after slow work).
+      labelFile = null;
+      if (needsShareToPrint()) {
+        const publicId = r.publicId;
+        labelPng(qrBox.innerHTML, formatPublicId(publicId)).then(
+          (blob) => {
+            if (qrFor === publicId) labelFile = new File([blob], `bevelflow-${formatPublicId(publicId)}.png`, { type: "image/png" });
+          },
+          (err: unknown) => console.warn("Couldn't prepare label image", err),
+        );
+      }
       qrBox.setAttribute("aria-label", `QR code for record ${formatPublicId(r.publicId)}`);
       qrBox.hidden = false;
     }
@@ -241,6 +256,22 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       h("div", null, `Created ${formatDateTime(r.createdAt)}`, r.createdBy ? ` by ${r.createdBy}` : ""),
       h("div", null, `Last modified ${formatDateTime(r.updatedAt)}`, r.updatedBy ? ` by ${r.updatedBy}` : ""),
     );
+  }
+
+  /**
+   * Print the QR code + ID. Computers and iOS Safari get the normal print dialog
+   * (print styles show only #print-label). The iOS home screen app ignores
+   * window.print(), so there we open the Share sheet with a label image; it has Print.
+   */
+  function onPrint(): void {
+    if (needsShareToPrint() && labelFile && navigator.canShare?.({ files: [labelFile] })) {
+      navigator.share({ files: [labelFile] }).catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return; // closed the sheet
+        setStatus(`Couldn't open printing: ${errorMessage(err)}`, true);
+      });
+      return;
+    }
+    window.print();
   }
 
   /** Log of workflow state changes, newest first. */
