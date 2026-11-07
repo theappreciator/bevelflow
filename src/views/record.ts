@@ -158,11 +158,11 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
         costError,
       ),
     ),
+    h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
     h("section", { class: "photos" }, photoHeading, photoGrid, photoError, fileInput),
     workflowSection,
     contactSection,
     meta,
-    h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
     qrBox,
   );
 
