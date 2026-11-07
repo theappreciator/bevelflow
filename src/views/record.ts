@@ -42,6 +42,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const addedThisVisit = new Set<string>();
   let uploading = 0;
   let busy = false;
+  /** An immediate workflow-state save is in progress. */
+  let stateSaving = false;
 
   // ---- form controls ------------------------------------------------------
   const text = (
@@ -78,11 +80,14 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     },
   });
   const costError = h("span", { class: "field-error", hidden: true }, "Enter an amount like 25.12");
+  // New record: chosen like any other field and saved with Create.
+  // Existing record: saved the moment it changes (no Save button needed).
   const stateSelect = h(
     "select",
-    { id: "workflowState", onchange: onEdit },
+    { id: "workflowState", onchange: () => (record ? void saveState() : onEdit()) },
     ...WORKFLOW_STATES.map((s) => h("option", { value: s.value }, s.label)),
   );
+  const stateStatus = h("span", { class: "field-status", role: "status" });
 
   const saveBtn = h("button", { class: "btn btn-primary btn-block", type: "submit" }, id ? "Save changes" : "Create record");
   const cancelBtn = h("button", { class: "btn btn-block", type: "button", onclick: () => void cancel() }, "Cancel");
@@ -129,6 +134,12 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       "div",
       { class: "record-fields" },
       publicIdRow,
+      h(
+        "label",
+        { class: "field", for: "workflowState" },
+        h("span", { class: "field-label-row" }, "Workflow state", stateStatus),
+        stateSelect,
+      ),
       ...textFields.map(([, , el]) => el),
       h(
         "label",
@@ -137,7 +148,6 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
         h("div", { class: "input-prefix" }, h("span", { class: "input-prefix-symbol", "aria-hidden": "true" }, "$"), costInput),
         costError,
       ),
-      h("label", { class: "field", for: "workflowState" }, h("span", null, "Workflow state"), stateSelect),
     ),
     h("section", { class: "photos" }, photoHeading, photoGrid, photoError, fileInput),
     contactSection,
@@ -174,10 +184,16 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     return fields;
   }
 
+  /** Put the saved values into the form (initial load only, so typing is never overwritten). */
   function fill(r: RecordDetail): void {
     for (const [key, input] of textFields) input.value = key === "phone" ? formatPhone(r.phone) : r[key];
     costInput.value = r.estimatedCostCents === null ? "" : formatCents(r.estimatedCostCents);
     stateSelect.value = r.workflowState;
+    showSaved(r);
+  }
+
+  /** Refresh what comes from the server (title, ID, QR, contacts, dates) without touching the inputs. */
+  function showSaved(r: RecordDetail): void {
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
     publicIdValue.textContent = formatPublicId(r.publicId);
     publicIdRow.hidden = !r.publicId;
@@ -264,7 +280,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   }
 
   function updateButtons(): void {
-    cancelBtn.disabled = busy || uploading > 0;
+    stateSelect.disabled = busy || stateSaving;
+    cancelBtn.disabled = busy || uploading > 0 || stateSaving;
     if (!record) {
       saveBtn.disabled = busy || uploading > 0;
       return;
@@ -354,7 +371,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       for (const p of updated.photos) if (!before.has(p.id)) addedThisVisit.add(p.id);
       if (!isCurrent()) return;
       record = updated;
-      fill(updated);
+      showSaved(updated);
     } catch (err) {
       showPhotoError(err);
     } finally {
@@ -378,12 +395,40 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       record = await deletePhoto(record.id, photoId);
       addedThisVisit.delete(photoId);
       if (!isCurrent()) return;
-      fill(record);
+      showSaved(record);
     } catch (err) {
       showPhotoError(err);
     } finally {
       busy = false;
       if (isCurrent()) renderPhotos();
+    }
+  }
+
+  /** Existing record: save just the workflow state as soon as it's picked. */
+  async function saveState(): Promise<void> {
+    if (!record) return;
+    const previous = record.workflowState;
+    const value = stateSelect.value as WorkflowState;
+    if (value === previous) return;
+    stateSaving = true;
+    stateStatus.className = "field-status";
+    stateStatus.textContent = "Saving…";
+    updateButtons();
+    try {
+      const updated = await updateRecord(record.id, { workflowState: value });
+      if (!isCurrent()) return;
+      record = updated;
+      showSaved(updated);
+      stateStatus.textContent = "Saved ✓";
+    } catch (err) {
+      handleSessionExpired(err);
+      if (!isCurrent()) return;
+      stateSelect.value = previous;
+      stateStatus.className = "field-status error";
+      stateStatus.textContent = `Not saved: ${errorMessage(err)}`;
+    } finally {
+      stateSaving = false;
+      if (isCurrent()) updateButtons();
     }
   }
 
@@ -464,7 +509,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
         handleSessionExpired(err);
         busy = false;
         if (isCurrent()) {
-          fill(record);
+          showSaved(record);
           renderPhotos();
           setStatus(`Couldn't delete the photos: ${errorMessage(err)}`, true);
         }

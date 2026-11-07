@@ -476,6 +476,22 @@ a {
   color: var(--danger);
 }
 
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.field-status {
+  font-size: 0.85rem;
+  color: #16a34a;
+}
+
+.field-status.error {
+  color: var(--danger);
+}
+
 .public-id {
   display: flex;
   align-items: baseline;
