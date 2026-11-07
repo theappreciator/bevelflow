@@ -102,6 +102,18 @@ a {
   white-space: nowrap;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
 .topbar-actions {
   display: flex;
   gap: 8px;

@@ -19,7 +19,12 @@ export function renderList(root: HTMLElement): void {
     h(
       "header",
       { class: "topbar" },
-      h("h1", null, "Bevelflow"),
+      h(
+        "h1",
+        { class: "brand" },
+        h("img", { class: "brand-logo", src: "/icon.svg", alt: "", width: 32, height: 32 }),
+        "Bevelflow",
+      ),
       h("div", { class: "topbar-actions" }, refreshBtn, h("a", { class: "btn btn-primary", href: "#/new", "aria-label": "New record" }, "+ New")),
     ),
     list,
