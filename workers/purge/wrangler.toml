@@ -1,0 +1,33 @@
+# Scheduled Worker that purges records not modified in PURGE_AFTER_DAYS days and
+# emails each record's creator. Separate from the Pages site (Pages can't run on a
+# schedule). Deploy with: npm run deploy:purge
+name = "bevelflow-purge"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+# No public URL: this Worker only runs on its schedule.
+workers_dev = false
+preview_urls = false
+
+[triggers]
+# Daily at 09:00 UTC (early morning in the US).
+crons = ["0 9 * * *"]
+
+[vars]
+PURGE_AFTER_DAYS = "30"
+APP_NAME = "Bevelflow"
+# Sender for the notice, e.g. "Bevelflow <noreply@yourdomain.com>". Must be on a domain
+# onboarded to Cloudflare Email. While empty, NOTHING is purged (a record is only
+# deleted after its email is sent).
+MAIL_FROM = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bevelflow-db"
+database_id = "d366e537-628a-4671-ab0d-d10c3a021f8a"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "bevelflow-photos"
+
+[[send_email]]
+name = "EMAIL"
