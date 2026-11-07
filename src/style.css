@@ -591,6 +591,97 @@ a {
   color: var(--muted);
 }
 
+/* Tighter header so logo + "Bevelflow" + three buttons fit on a 375px phone. */
+.topbar {
+  gap: 8px;
+}
+
+.topbar .brand {
+  font-size: 1.15rem;
+  gap: 6px;
+}
+
+.topbar .brand-logo {
+  width: 28px;
+  height: 28px;
+}
+
+.topbar-actions {
+  gap: 6px;
+}
+
+.topbar-actions .btn {
+  padding: 0 10px;
+}
+
+.btn-scan {
+  min-width: 40px;
+  padding: 0 8px;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* ---- QR scanner ---- */
+.scanner {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000;
+  overflow: hidden;
+}
+
+.scanner-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Square guide in the middle; the dimmed area around it comes from the shadow. */
+.scanner-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(70vw, 70dvh, 320px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 3px solid #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.45);
+}
+
+.scanner-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.scanner-message {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: calc(32px + env(safe-area-inset-bottom));
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  text-align: center;
+}
+
+.scanner-message.is-error {
+  background: rgb(185 28 28 / 0.85);
+}
+
 .lightbox {
   position: fixed;
   inset: 0;

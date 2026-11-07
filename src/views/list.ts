@@ -25,7 +25,23 @@ export function renderList(root: HTMLElement): void {
         h("img", { class: "brand-logo", src: "/icon.svg", alt: "", width: 32, height: 32 }),
         "Bevelflow",
       ),
-      h("div", { class: "topbar-actions" }, refreshBtn, h("a", { class: "btn btn-primary", href: "#/new", "aria-label": "New record" }, "+ New")),
+      h(
+        "div",
+        { class: "topbar-actions" },
+        refreshBtn,
+        h(
+          "button",
+          {
+            class: "btn btn-scan",
+            type: "button",
+            "aria-label": "Scan QR code",
+            title: "Scan QR code",
+            onclick: () => void import("./scanner").then((m) => m.openScanner()),
+          },
+          "⛶",
+        ),
+        h("a", { class: "btn btn-primary", href: "#/new", "aria-label": "New record" }, "+ New"),
+      ),
     ),
     list,
   );
