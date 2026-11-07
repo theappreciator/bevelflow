@@ -1,10 +1,13 @@
 {
   "name": "bevelflow",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Bevelflow PWA",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "generate-icons": "pwa-assets-generator"
   },
   "repository": {
     "type": "git",
@@ -13,12 +16,20 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/theappreciator/bevelflow/issues"
   },
   "homepage": "https://github.com/theappreciator/bevelflow#readme",
   "devDependencies": {
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vite-plugin-pwa": "^2.0.0",
     "wrangler": "^4.158.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=26 <27"
   }
 }
