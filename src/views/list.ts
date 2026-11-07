@@ -20,7 +20,7 @@ export function renderList(root: HTMLElement): void {
       "header",
       { class: "topbar" },
       h("h1", null, "Records"),
-      h("div", { class: "topbar-actions" }, refreshBtn, h("a", { class: "btn btn-primary", href: "#/new" }, "New record")),
+      h("div", { class: "topbar-actions" }, refreshBtn, h("a", { class: "btn btn-primary", href: "#/new", "aria-label": "New record" }, "+ New")),
     ),
     list,
   );
@@ -34,7 +34,7 @@ export function renderList(root: HTMLElement): void {
       const records = await listRecords();
       list.replaceChildren(
         records.length === 0
-          ? h("p", { class: "muted center" }, "No records yet. Tap “New record” to add one.")
+          ? h("p", { class: "muted center" }, "No records yet. Tap “+ New” to add one.")
           : h("ul", { class: "record-list" }, ...records.map(row)),
       );
     } catch (err) {
