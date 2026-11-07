@@ -514,6 +514,21 @@ a {
   font-size: 1rem; /* 16px+ stops iOS zooming into the field */
 }
 
+/* Notes: fixed ~3-line box; longer text scrolls inside it. */
+.field textarea {
+  height: calc(3 * 1.4em + 20px);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem; /* 16px+ stops iOS zooming into the field */
+  line-height: 1.4;
+  resize: none;
+  overflow-y: auto;
+}
+
 .field-error {
   color: var(--danger);
 }

@@ -32,8 +32,8 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
     const now = Date.now();
     const insert = env.DB.prepare(
       `INSERT INTO records (id, public_id, first_name, last_name, email, phone, estimated_cost_cents,
-                            workflow_state, created_at, updated_at, created_by, updated_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            workflow_state, notes, created_at, updated_at, created_by, updated_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const state = f.workflowState ?? "new";
     // Record + its first workflow-history entry, in one transaction.
@@ -48,6 +48,7 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
           f.phone ?? "",
           f.estimatedCostCents ?? null,
           state,
+          f.notes ?? "",
           now,
           now,
           data.userEmail,

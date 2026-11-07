@@ -1,5 +1,6 @@
 import {
   isWorkflowState,
+  MAX_NOTES_LENGTH,
   MAX_TEXT_LENGTH,
   type ContactEvent,
   type ContactKind,
@@ -12,7 +13,7 @@ import {
 } from "../shared/types";
 import { HttpError } from "./http";
 
-const TEXT_FIELDS = ["firstName", "lastName", "email", "phone"] as const;
+const TEXT_FIELDS = ["firstName", "lastName", "email", "phone", "notes"] as const;
 
 /** camelCase API field -> snake_case column. */
 export const COLUMNS: Record<keyof RecordFields, string> = {
@@ -20,6 +21,7 @@ export const COLUMNS: Record<keyof RecordFields, string> = {
   lastName: "last_name",
   email: "email",
   phone: "phone",
+  notes: "notes",
   estimatedCostCents: "estimated_cost_cents",
   workflowState: "workflow_state",
 };
@@ -33,7 +35,8 @@ export function parseFields(body: Record<string, unknown>): Partial<RecordFields
   for (const [key, value] of Object.entries(body)) {
     if ((TEXT_FIELDS as readonly string[]).includes(key)) {
       if (typeof value !== "string") throw new HttpError(400, `${key} must be a string`);
-      if (value.length > MAX_TEXT_LENGTH) throw new HttpError(400, `${key} is too long`);
+      const max = key === "notes" ? MAX_NOTES_LENGTH : MAX_TEXT_LENGTH;
+      if (value.length > max) throw new HttpError(400, `${key} is too long`);
       out[key as (typeof TEXT_FIELDS)[number]] = value.trim();
     } else if (key === "estimatedCostCents") {
       if (value !== null && !Number.isSafeInteger(value)) {
@@ -59,6 +62,7 @@ export interface RecordRow {
   phone: string;
   estimated_cost_cents: number | null;
   workflow_state: WorkflowState;
+  notes: string;
   created_at: number;
   updated_at: number;
   created_by: string;
@@ -162,6 +166,7 @@ export function toDetail(
     phone: r.phone,
     estimatedCostCents: r.estimated_cost_cents,
     workflowState: r.workflow_state,
+    notes: r.notes,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     createdBy: r.created_by,

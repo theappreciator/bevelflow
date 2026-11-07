@@ -14,6 +14,8 @@ export type WorkflowState = (typeof WORKFLOW_STATES)[number]["value"];
 
 export const MAX_PHOTOS_PER_RECORD = 5;
 export const MAX_TEXT_LENGTH = 500;
+/** Notes are free-form and can be much longer than the other text fields. */
+export const MAX_NOTES_LENGTH = 10_000;
 /** Upper bound for an uploaded (already resized) JPEG. */
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
@@ -26,6 +28,8 @@ export interface RecordFields {
   /** Whole cents: 25.12 is stored as 2512. */
   estimatedCostCents: number | null;
   workflowState: WorkflowState;
+  /** Free-form notes. */
+  notes: string;
 }
 
 export interface Photo {

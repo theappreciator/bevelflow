@@ -3,6 +3,7 @@ import { formatCents, parseDollarsToCents } from "../money";
 import { formatDateTime, h } from "../dom";
 import { resizeToJpeg } from "../image";
 import {
+  MAX_NOTES_LENGTH,
   MAX_PHOTOS_PER_RECORD,
   photoUrl,
   WORKFLOW_STATES,
@@ -81,6 +82,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     },
   });
   const costError = h("span", { class: "field-error", hidden: true }, "Enter an amount like 25.12");
+  // Free-form notes: shows about three lines and scrolls inside itself for more.
+  const notesInput = h("textarea", { id: "notes", rows: 3, maxlength: MAX_NOTES_LENGTH, oninput: onEdit });
   // New record: chosen like any other field and saved with Create.
   // Existing record: saved the moment it changes (no Save button needed).
   const stateSelect = h(
@@ -157,6 +160,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
         h("div", { class: "input-prefix" }, h("span", { class: "input-prefix-symbol", "aria-hidden": "true" }, "$"), costInput),
         costError,
       ),
+      h("label", { class: "field", for: "notes" }, h("span", null, "Notes"), notesInput),
     ),
     h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
     h("section", { class: "photos" }, photoHeading, photoGrid, photoError, fileInput),
@@ -191,6 +195,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     if (cents === "invalid") return null;
     const fields = { estimatedCostCents: cents, workflowState: stateSelect.value as WorkflowState } as RecordFields;
     for (const [key, input] of textFields) fields[key] = input.value.trim();
+    fields.notes = notesInput.value.trim();
     return fields;
   }
 
@@ -198,6 +203,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   function fill(r: RecordDetail): void {
     for (const [key, input] of textFields) input.value = key === "phone" ? formatPhone(r.phone) : r[key];
     costInput.value = r.estimatedCostCents === null ? "" : formatCents(r.estimatedCostCents);
+    notesInput.value = r.notes;
     stateSelect.value = r.workflowState;
     showSaved(r);
   }
@@ -308,6 +314,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     return (
       textFields.some(([, input]) => input.value.trim() !== "") ||
       costInput.value.trim() !== "" ||
+      notesInput.value.trim() !== "" ||
       stateSelect.value !== "new"
     );
   }
