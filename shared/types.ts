@@ -57,6 +57,19 @@ export interface RecordDetail extends RecordFields {
   createdBy: string;
   updatedBy: string;
   photos: Photo[];
+  /** Email/Call button taps, newest first. */
+  contacts: ContactEvent[];
+}
+
+export type ContactKind = "email" | "call";
+
+export interface ContactEvent {
+  id: string;
+  kind: ContactKind;
+  /** The email address or phone number used. */
+  target: string;
+  createdAt: number;
+  createdBy: string;
 }
 
 export function isWorkflowState(v: unknown): v is WorkflowState {

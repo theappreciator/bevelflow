@@ -1,6 +1,8 @@
 import {
   isWorkflowState,
   MAX_TEXT_LENGTH,
+  type ContactEvent,
+  type ContactKind,
   type Photo,
   type RecordDetail,
   type RecordFields,
@@ -91,7 +93,23 @@ export function toSummary(r: SummaryRow): RecordSummary {
   };
 }
 
-export function toDetail(r: RecordRow, photos: PhotoRow[]): RecordDetail {
+export interface ContactEventRow {
+  id: string;
+  record_id: string;
+  kind: ContactKind;
+  target: string;
+  created_at: number;
+  created_by: string;
+}
+
+/** How many contact events the record screen shows. */
+export const CONTACT_HISTORY_LIMIT = 200;
+
+export function toContactEvent(c: ContactEventRow): ContactEvent {
+  return { id: c.id, kind: c.kind, target: c.target, createdAt: c.created_at, createdBy: c.created_by };
+}
+
+export function toDetail(r: RecordRow, photos: PhotoRow[], contacts: ContactEventRow[]): RecordDetail {
   return {
     id: r.id,
     publicId: r.public_id,
@@ -106,15 +124,19 @@ export function toDetail(r: RecordRow, photos: PhotoRow[]): RecordDetail {
     createdBy: r.created_by,
     updatedBy: r.updated_by,
     photos: photos.map((p): Photo => ({ id: p.id, createdAt: p.created_at, bytes: p.bytes })),
+    contacts: contacts.map(toContactEvent),
   };
 }
 
 export async function loadDetail(db: D1Database, id: string): Promise<RecordDetail> {
-  const [rec, photos] = await db.batch([
+  const [rec, photos, contacts] = await db.batch([
     db.prepare("SELECT * FROM records WHERE id = ?").bind(id),
     db.prepare("SELECT * FROM photos WHERE record_id = ? ORDER BY created_at").bind(id),
+    db
+      .prepare("SELECT * FROM contact_events WHERE record_id = ? ORDER BY created_at DESC LIMIT ?")
+      .bind(id, CONTACT_HISTORY_LIMIT),
   ]);
   const row = rec?.results[0] as RecordRow | undefined;
   if (!row) throw new HttpError(404, "Record not found");
-  return toDetail(row, (photos?.results ?? []) as PhotoRow[]);
+  return toDetail(row, (photos?.results ?? []) as PhotoRow[], (contacts?.results ?? []) as ContactEventRow[]);
 }

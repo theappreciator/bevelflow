@@ -11,7 +11,10 @@ import {
   type WorkflowState,
 } from "../../shared/types";
 import { formatPublicId } from "../../shared/publicId";
+import type { ContactEvent } from "../../shared/types";
+import { formatPhone } from "../phone";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
+import { contactButton, contactIcon } from "./contact";
 
 type TextKey = "firstName" | "lastName" | "email" | "phone";
 
@@ -81,6 +84,15 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const publicIdValue = h("span", { class: "public-id-value" });
   const publicIdRow = h("div", { class: "public-id", hidden: true }, h("span", { class: "muted" }, "Record ID"), publicIdValue);
 
+  const contactButtons = h("div", { class: "record-actions" });
+  const contactList = h("ul", { class: "contact-list" });
+  const contactSection = h(
+    "section",
+    { class: "contacts", hidden: true },
+    h("div", { class: "section-head" }, h("h2", null, "Contact history"), contactButtons),
+    contactList,
+  );
+
   const photoHeading = h("h2", null);
   const photoGrid = h("div", { class: "photo-grid" });
   const photoError = h("p", { class: "error", hidden: true });
@@ -118,6 +130,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       h("label", { class: "field", for: "workflowState" }, h("span", null, "Workflow state"), stateSelect),
     ),
     h("section", { class: "photos" }, photoHeading, photoGrid, photoError, fileInput),
+    contactSection,
     meta,
     h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
   );
@@ -157,9 +170,47 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
     publicIdValue.textContent = formatPublicId(r.publicId);
     publicIdRow.hidden = !r.publicId;
+    renderContacts(r);
     meta.replaceChildren(
       h("div", null, `Created ${formatDateTime(r.createdAt)}`, r.createdBy ? ` by ${r.createdBy}` : ""),
       h("div", null, `Last modified ${formatDateTime(r.updatedAt)}`, r.updatedBy ? ` by ${r.updatedBy}` : ""),
+    );
+  }
+
+  /** Email/Call buttons (using the saved email and phone) and the log of past taps. */
+  function renderContacts(r: RecordDetail): void {
+    contactSection.hidden = false;
+    const name = [r.firstName, r.lastName].filter(Boolean).join(" ") || "this record";
+    const onLogged = (event: ContactEvent): void => {
+      if (!record || !isCurrent()) return;
+      record.contacts.unshift(event);
+      renderContacts(record);
+    };
+    contactButtons.replaceChildren(
+      contactButton("email", r.id, r.email, name, onLogged),
+      contactButton("call", r.id, r.phone, name, onLogged),
+    );
+    contactList.replaceChildren(
+      ...(r.contacts.length === 0
+        ? [h("li", { class: "muted contact-empty" }, "No emails or calls yet.")]
+        : r.contacts.map((c) =>
+            h(
+              "li",
+              { class: "contact-item" },
+              h("span", { class: `contact-chip is-${c.kind}` }, contactIcon(c.kind)),
+              h(
+                "div",
+                { class: "contact-text" },
+                h(
+                  "span",
+                  null,
+                  c.kind === "email" ? "Email" : "Call",
+                  c.target ? ` · ${c.kind === "call" ? formatPhone(c.target) : c.target}` : "",
+                ),
+                h("span", { class: "muted" }, formatDateTime(c.createdAt), c.createdBy ? ` · ${c.createdBy}` : ""),
+              ),
+            ),
+          )),
     );
   }
 

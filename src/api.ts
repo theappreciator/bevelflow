@@ -1,4 +1,4 @@
-import type { RecordDetail, RecordFields, RecordSummary } from "../shared/types";
+import type { ContactEvent, ContactKind, RecordDetail, RecordFields, RecordSummary } from "../shared/types";
 
 export class ApiError extends Error {
   constructor(
@@ -63,6 +63,17 @@ export function uploadPhoto(recordId: string, jpeg: Blob): Promise<RecordDetail>
     method: "POST",
     headers: { "content-type": "image/jpeg" },
     body: jpeg,
+  });
+}
+
+/**
+ * Logs an Email/Call button tap. keepalive lets the request finish even if the
+ * phone switches to the Mail or Phone app straight away.
+ */
+export function logContact(recordId: string, kind: ContactKind): Promise<ContactEvent> {
+  return request(`/api/records/${encodeURIComponent(recordId)}/contacts`, {
+    ...sendJson("POST", { kind }),
+    keepalive: true,
   });
 }
 

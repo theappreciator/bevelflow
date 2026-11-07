@@ -255,6 +255,89 @@ a {
   opacity: 0.6;
 }
 
+/* ---- contact history (record screen) ---- */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.section-head .record-actions {
+  padding-right: 0;
+}
+
+.contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.contact-item,
+.contact-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.contact-item + .contact-item {
+  border-top: 1px solid var(--border);
+}
+
+.contact-chip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--btn-bg);
+  color: #fff;
+}
+
+.contact-chip.is-email {
+  --btn-bg: #2563eb;
+}
+
+.contact-chip.is-call {
+  --btn-bg: #16a34a;
+}
+
+.contact-chip svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contact-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.contact-text > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-text .muted {
+  font-size: 0.85rem;
+}
+
 .thumb-wrap {
   position: relative;
   flex: none;

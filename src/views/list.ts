@@ -1,8 +1,9 @@
 import { listRecords } from "../api";
 import { formatDateTime, h } from "../dom";
-import { formatPhone, telHref } from "../phone";
+import { formatPhone } from "../phone";
 import { photoUrl, type RecordSummary } from "../../shared/types";
 import { errorMessage, handleSessionExpired } from "./common";
+import { contactButton } from "./contact";
 
 export function renderList(root: HTMLElement): void {
   const list = h("div", { class: "list-body" });
@@ -54,33 +55,6 @@ function displayName(r: RecordSummary): string {
   return [r.lastName, r.firstName].filter(Boolean).join(", ") || "(no name)";
 }
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
-/** 24px outline icon from SVG path data. */
-function icon(paths: string[]): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("aria-hidden", "true");
-  for (const d of paths) {
-    const p = document.createElementNS(SVG_NS, "path");
-    p.setAttribute("d", d);
-    svg.append(p);
-  }
-  return svg;
-}
-
-const EMAIL_ICON = ["M4 6h16v12H4z", "m4 7 8 6 8-6"];
-const PHONE_ICON = [
-  "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2",
-];
-
-/** Icon link; rendered dimmed and inert when there's nothing to email/call. */
-function contactButton(kind: "email" | "call", href: string | null, label: string, paths: string[]): HTMLElement {
-  return href
-    ? h("a", { class: `contact-btn is-${kind}`, href, "aria-label": label, title: label }, icon(paths))
-    : h("span", { class: `contact-btn is-${kind} is-disabled`, "aria-hidden": "true" }, icon(paths));
-}
-
 function row(r: RecordSummary): HTMLLIElement {
   const thumb = h(
     "div",
@@ -98,7 +72,6 @@ function row(r: RecordSummary): HTMLLIElement {
   );
 
   const name = displayName(r);
-  const email = r.email.trim();
   const phone = r.phone.trim();
 
   return h(
@@ -119,8 +92,8 @@ function row(r: RecordSummary): HTMLLIElement {
     h(
       "div",
       { class: "record-actions" },
-      contactButton("email", email ? `mailto:${encodeURI(email)}` : null, `Email ${name}`, EMAIL_ICON),
-      contactButton("call", phone ? telHref(phone) : null, `Call ${name}`, PHONE_ICON),
+      contactButton("email", r.id, r.email, name),
+      contactButton("call", r.id, r.phone, name),
     ),
   );
 }
