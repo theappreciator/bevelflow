@@ -23,7 +23,8 @@ export interface RecordFields {
   lastName: string;
   email: string;
   phone: string;
-  estimatedCost: number | null;
+  /** Whole cents: 25.12 is stored as 2512. */
+  estimatedCostCents: number | null;
   workflowState: WorkflowState;
 }
 

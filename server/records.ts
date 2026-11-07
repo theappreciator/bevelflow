@@ -17,7 +17,7 @@ export const COLUMNS: Record<keyof RecordFields, string> = {
   lastName: "last_name",
   email: "email",
   phone: "phone",
-  estimatedCost: "estimated_cost",
+  estimatedCostCents: "estimated_cost_cents",
   workflowState: "workflow_state",
 };
 
@@ -32,11 +32,11 @@ export function parseFields(body: Record<string, unknown>): Partial<RecordFields
       if (typeof value !== "string") throw new HttpError(400, `${key} must be a string`);
       if (value.length > MAX_TEXT_LENGTH) throw new HttpError(400, `${key} is too long`);
       out[key as (typeof TEXT_FIELDS)[number]] = value.trim();
-    } else if (key === "estimatedCost") {
+    } else if (key === "estimatedCostCents") {
       if (value !== null && !Number.isSafeInteger(value)) {
-        throw new HttpError(400, "estimatedCost must be a whole number or null");
+        throw new HttpError(400, "estimatedCostCents must be a whole number of cents or null");
       }
-      out.estimatedCost = value as number | null;
+      out.estimatedCostCents = value as number | null;
     } else if (key === "workflowState") {
       if (!isWorkflowState(value)) throw new HttpError(400, "Unknown workflowState");
       out.workflowState = value;
@@ -53,7 +53,7 @@ export interface RecordRow {
   last_name: string;
   email: string;
   phone: string;
-  estimated_cost: number | null;
+  estimated_cost_cents: number | null;
   workflow_state: WorkflowState;
   created_at: number;
   updated_at: number;
@@ -96,7 +96,7 @@ export function toDetail(r: RecordRow, photos: PhotoRow[]): RecordDetail {
     lastName: r.last_name,
     email: r.email,
     phone: r.phone,
-    estimatedCost: r.estimated_cost,
+    estimatedCostCents: r.estimated_cost_cents,
     workflowState: r.workflow_state,
     createdAt: r.created_at,
     updatedAt: r.updated_at,

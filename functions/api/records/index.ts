@@ -30,7 +30,7 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
     const id = crypto.randomUUID();
     const now = Date.now();
     await env.DB.prepare(
-      `INSERT INTO records (id, first_name, last_name, email, phone, estimated_cost, workflow_state,
+      `INSERT INTO records (id, first_name, last_name, email, phone, estimated_cost_cents, workflow_state,
                             created_at, updated_at, created_by, updated_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
@@ -40,7 +40,7 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
         f.lastName ?? "",
         f.email ?? "",
         f.phone ?? "",
-        f.estimatedCost ?? null,
+        f.estimatedCostCents ?? null,
         f.workflowState ?? "new",
         now,
         now,

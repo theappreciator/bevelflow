@@ -5,7 +5,13 @@ import { errorMessage, handleSessionExpired } from "./common";
 
 export function renderList(root: HTMLElement): void {
   const list = h("div", { class: "list-body" });
-  const refreshBtn = h("button", { class: "btn", type: "button", onclick: () => void load() }, "Refresh");
+  // The label stays in place (hidden) while loading so the button never changes size.
+  const refreshBtn = h(
+    "button",
+    { class: "btn btn-refresh", type: "button", onclick: () => void load() },
+    h("span", { class: "btn-label" }, "Refresh"),
+    h("span", { class: "spinner", "aria-hidden": "true" }),
+  );
 
   root.replaceChildren(
     h(
@@ -19,7 +25,8 @@ export function renderList(root: HTMLElement): void {
 
   async function load(): Promise<void> {
     refreshBtn.disabled = true;
-    refreshBtn.textContent = "Refreshing…";
+    refreshBtn.classList.add("is-loading");
+    refreshBtn.setAttribute("aria-label", "Refreshing");
     if (!list.firstChild) list.replaceChildren(h("p", { class: "muted center" }, "Loading…"));
     try {
       const records = await listRecords();
@@ -33,11 +40,17 @@ export function renderList(root: HTMLElement): void {
       list.replaceChildren(h("p", { class: "error center" }, errorMessage(err)));
     } finally {
       refreshBtn.disabled = false;
-      refreshBtn.textContent = "Refresh";
+      refreshBtn.classList.remove("is-loading");
+      refreshBtn.removeAttribute("aria-label");
     }
   }
 
   void load();
+}
+
+/** "Last, First" — or whichever part exists. */
+function displayName(r: RecordSummary): string {
+  return [r.lastName, r.firstName].filter(Boolean).join(", ") || "(no name)";
 }
 
 function row(r: RecordSummary): HTMLLIElement {
@@ -61,7 +74,7 @@ function row(r: RecordSummary): HTMLLIElement {
       h(
         "div",
         { class: "record-row-text" },
-        h("span", { class: "record-row-name" }, r.lastName || r.firstName || "(no name)"),
+        h("span", { class: "record-row-name" }, displayName(r)),
         h("span", { class: "record-row-phone" }, r.phone || "—"),
         h("span", { class: "record-row-date muted" }, formatDateTime(r.createdAt)),
       ),

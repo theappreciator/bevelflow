@@ -1,4 +1,5 @@
 import { createRecord, deletePhoto, getRecord, updateRecord, uploadPhoto } from "../api";
+import { formatCents, parseDollarsToCents } from "../money";
 import { formatDateTime, h } from "../dom";
 import { resizeToJpeg } from "../image";
 import {
@@ -19,36 +20,61 @@ interface PendingPhoto {
   url: string;
 }
 
+const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 /**
  * New record (id = null) or view/edit an existing one.
  * `isCurrent` lets async work bail out if the user has navigated elsewhere.
+ *
+ * Cancel (and "‹ Records") throws away unsaved typing. On an existing record it also
+ * deletes photos added since the record was opened or last saved. It asks first if
+ * there is anything to lose.
  */
 export function renderRecord(root: HTMLElement, id: string | null, isCurrent: () => boolean): void {
   let record: RecordDetail | null = null;
   const pending: PendingPhoto[] = [];
+  /** Existing record: photos uploaded since it was opened / last saved. */
+  const addedThisVisit = new Set<string>();
   let uploading = 0;
   let busy = false;
 
   // ---- form controls ------------------------------------------------------
-  const text = (key: TextKey, label: string, inputmode: string, autocomplete: string): [TextKey, HTMLInputElement, HTMLElement] => {
-    const input = h("input", { id: key, type: "text", inputmode, autocomplete, oninput: onEdit });
+  const text = (
+    key: TextKey,
+    label: string,
+    attrs: Record<string, string> = {},
+  ): [TextKey, HTMLInputElement, HTMLElement] => {
+    const input = h("input", { id: key, type: "text", autocomplete: "off", ...attrs, oninput: onEdit });
     return [key, input, h("label", { class: "field", for: key }, h("span", null, label), input)];
   };
   const textFields = [
-    text("firstName", "First name", "text", "off"),
-    text("lastName", "Last name", "text", "off"),
-    text("email", "Email", "email", "off"),
-    text("phone", "Phone", "tel", "off"),
+    text("firstName", "First name"),
+    text("lastName", "Last name"),
+    // Take the email exactly as typed: no auto-capitalising, autocorrect or spellcheck.
+    text("email", "Email", { inputmode: "email", autocapitalize: "none", autocorrect: "off", spellcheck: "false" }),
+    text("phone", "Phone", { inputmode: "tel" }),
   ];
-  const costInput = h("input", { id: "estimatedCost", type: "text", inputmode: "numeric", autocomplete: "off", oninput: onEdit });
-  const costError = h("span", { class: "field-error", hidden: true }, "Enter a whole number, e.g. 1200");
+  const costInput = h("input", {
+    id: "estimatedCost",
+    type: "text",
+    inputmode: "decimal",
+    autocomplete: "off",
+    placeholder: "0.00",
+    oninput: onEdit,
+    onblur: () => {
+      const cents = parseDollarsToCents(costInput.value);
+      if (typeof cents === "number") costInput.value = formatCents(cents);
+    },
+  });
+  const costError = h("span", { class: "field-error", hidden: true }, "Enter an amount like 25.12");
   const stateSelect = h(
     "select",
     { id: "workflowState", onchange: onEdit },
     ...WORKFLOW_STATES.map((s) => h("option", { value: s.value }, s.label)),
   );
 
-  const saveBtn = h("button", { class: "btn btn-primary", type: "submit" }, id ? "Save changes" : "Create record");
+  const saveBtn = h("button", { class: "btn btn-primary btn-block", type: "submit" }, id ? "Save changes" : "Create record");
+  const cancelBtn = h("button", { class: "btn btn-block", type: "button", onclick: () => void cancel() }, "Cancel");
   const status = h("p", { class: "form-status", role: "status" });
   const meta = h("div", { class: "record-meta muted" });
 
@@ -64,47 +90,65 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   });
 
   const title = h("h1", null, id ? "Record" : "New record");
-  const form = h(
-    "form",
-    { class: "record-form", novalidate: true, onsubmit: (e: Event) => { e.preventDefault(); void save(); } },
-    ...textFields.map(([, , el]) => el),
-    h("label", { class: "field", for: "estimatedCost" }, h("span", null, "Estimated cost"), costInput, costError),
-    h("label", { class: "field", for: "workflowState" }, h("span", null, "Workflow state"), stateSelect),
-    h("div", { class: "form-actions" }, saveBtn, status),
-  );
-
   const content = h(
-    "div",
-    { class: "record-body" },
-    form,
+    "form",
+    {
+      class: "record-body",
+      novalidate: true,
+      onsubmit: (e: Event) => {
+        e.preventDefault();
+        void save();
+      },
+    },
+    h(
+      "div",
+      { class: "record-fields" },
+      ...textFields.map(([, , el]) => el),
+      h(
+        "label",
+        { class: "field", for: "estimatedCost" },
+        h("span", null, "Estimated cost"),
+        h("div", { class: "input-prefix" }, h("span", { class: "input-prefix-symbol", "aria-hidden": "true" }, "$"), costInput),
+        costError,
+      ),
+      h("label", { class: "field", for: "workflowState" }, h("span", null, "Workflow state"), stateSelect),
+    ),
     h("section", { class: "photos" }, photoHeading, photoGrid, photoError, fileInput),
     meta,
+    h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
+  );
+
+  const back = h(
+    "a",
+    {
+      class: "back",
+      href: "#/",
+      onclick: (e: Event) => {
+        e.preventDefault();
+        void cancel();
+      },
+    },
+    "‹ Records",
   );
 
   root.replaceChildren(
-    h("header", { class: "topbar" }, h("a", { class: "back", href: "#/" }, "‹ Records"), title),
+    h("header", { class: "topbar" }, back, title),
     id ? h("p", { class: "muted center" }, "Loading…") : content,
   );
 
   // ---- helpers ------------------------------------------------------------
-  function parseCost(): number | null | "invalid" {
-    const raw = costInput.value.replace(/[\s,$]/g, "");
-    if (raw === "") return null;
-    return /^-?\d+$/.test(raw) && Number.isSafeInteger(Number(raw)) ? Number(raw) : "invalid";
-  }
-
   function readFields(): RecordFields | null {
-    const cost = parseCost();
-    costError.hidden = cost !== "invalid";
-    if (cost === "invalid") return null;
-    const fields = { estimatedCost: cost, workflowState: stateSelect.value as WorkflowState } as RecordFields;
+    const cents = parseDollarsToCents(costInput.value);
+    costError.hidden = cents !== "invalid";
+    if (cents === "invalid") return null;
+    const fields = { estimatedCostCents: cents, workflowState: stateSelect.value as WorkflowState } as RecordFields;
     for (const [key, input] of textFields) fields[key] = input.value.trim();
     return fields;
   }
 
   function fill(r: RecordDetail): void {
     for (const [key, input] of textFields) input.value = r[key];
-    costInput.value = r.estimatedCost === null ? "" : String(r.estimatedCost);
+    costInput.value = r.estimatedCostCents === null ? "" : formatCents(r.estimatedCostCents);
     stateSelect.value = r.workflowState;
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
     meta.replaceChildren(
@@ -113,7 +157,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     );
   }
 
-  /** Fields that differ from the saved record (edit mode). */
+  /** Fields that differ from the saved record (edit mode). null = invalid input. */
   function changes(): Partial<RecordFields> | null {
     const f = readFields();
     if (!f || !record) return f;
@@ -124,18 +168,34 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     return diff;
   }
 
-  function onEdit(): void {
-    status.textContent = "";
-    updateSaveButton();
+  /** Has the person typed or changed anything that isn't saved yet? */
+  function hasUnsavedTyping(): boolean {
+    if (record) {
+      const diff = changes();
+      return diff === null || Object.keys(diff).length > 0;
+    }
+    return (
+      textFields.some(([, input]) => input.value.trim() !== "") ||
+      costInput.value.trim() !== "" ||
+      stateSelect.value !== "new"
+    );
   }
 
-  function updateSaveButton(): void {
-    if (!id) {
-      saveBtn.disabled = busy;
+  function onEdit(): void {
+    status.textContent = "";
+    status.className = "form-status";
+    updateButtons();
+  }
+
+  function updateButtons(): void {
+    cancelBtn.disabled = busy || uploading > 0;
+    if (!record) {
+      saveBtn.disabled = busy || uploading > 0;
       return;
     }
     const diff = changes();
-    saveBtn.disabled = busy || !diff || Object.keys(diff).length === 0;
+    const dirty = !diff || Object.keys(diff).length > 0 || addedThisVisit.size > 0;
+    saveBtn.disabled = busy || uploading > 0 || !dirty;
   }
 
   function photoCount(): number {
@@ -167,6 +227,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       );
     }
     photoGrid.replaceChildren(...tiles);
+    updateButtons();
   }
 
   function photoTile(src: string, onDelete: () => void): HTMLElement {
@@ -182,6 +243,11 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     handleSessionExpired(err);
     photoError.textContent = errorMessage(err);
     photoError.hidden = false;
+  }
+
+  function setStatus(message: string, isError = false): void {
+    status.className = isError ? "form-status error" : "form-status";
+    status.textContent = message;
   }
 
   // ---- actions ------------------------------------------------------------
@@ -207,7 +273,9 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     renderPhotos();
     try {
       const blob = await resizeToJpeg(file);
+      const before = new Set(record.photos.map((p) => p.id));
       const updated = await uploadPhoto(record.id, blob);
+      for (const p of updated.photos) if (!before.has(p.id)) addedThisVisit.add(p.id);
       if (!isCurrent()) return;
       record = updated;
       fill(updated);
@@ -232,33 +300,29 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     renderPhotos();
     try {
       record = await deletePhoto(record.id, photoId);
+      addedThisVisit.delete(photoId);
       if (!isCurrent()) return;
       fill(record);
     } catch (err) {
       showPhotoError(err);
     } finally {
       busy = false;
-      if (isCurrent()) {
-        renderPhotos();
-        updateSaveButton();
-      }
+      if (isCurrent()) renderPhotos();
     }
   }
 
   async function save(): Promise<void> {
     const fields = readFields();
-    if (!fields || busy) return;
+    if (!fields || busy || uploading > 0) return;
     busy = true;
-    updateSaveButton();
     renderPhotos();
-    status.className = "form-status";
-    status.textContent = "Saving…";
+    setStatus("Saving…");
     try {
       if (!record) {
         const created = await createRecord(fields);
         let failed = 0;
         for (const [i, p] of pending.entries()) {
-          status.textContent = `Uploading photo ${i + 1} of ${pending.length}…`;
+          setStatus(`Uploading photo ${i + 1} of ${pending.length}…`);
           try {
             await uploadPhoto(created.id, p.blob);
           } catch (err) {
@@ -268,7 +332,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
           URL.revokeObjectURL(p.url);
         }
         pending.length = 0;
-        if (failed) alert(`${failed} photo(s) failed to upload. You can add them again on the record.`);
+        if (failed) alert(`${plural(failed, "photo")} failed to upload. You can add them again on the record.`);
         location.replace(`#/records/${encodeURIComponent(created.id)}`);
         return;
       }
@@ -278,25 +342,69 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
         if (!isCurrent()) return;
         fill(record);
       }
-      status.textContent = "Saved";
+      addedThisVisit.clear();
+      setStatus("Saved");
     } catch (err) {
       handleSessionExpired(err);
-      status.className = "form-status error";
-      status.textContent = errorMessage(err);
+      setStatus(errorMessage(err), true);
     } finally {
       busy = false;
-      if (isCurrent()) {
-        updateSaveButton();
-        renderPhotos();
+      if (isCurrent()) renderPhotos();
+    }
+  }
+
+  async function cancel(): Promise<void> {
+    if (busy) return;
+    if (uploading > 0) {
+      alert("Please wait for the photo upload to finish.");
+      return;
+    }
+
+    const typed = hasUnsavedTyping();
+    const photos = record ? addedThisVisit.size : pending.length;
+    if (typed || photos > 0) {
+      const lose: string[] = [];
+      if (typed) lose.push(record ? "your unsaved changes" : "what you've typed");
+      if (photos > 0) {
+        lose.push(
+          record
+            ? `the ${plural(photos, "photo")} you added (${photos === 1 ? "it" : "they"} will be deleted)`
+            : plural(photos, "photo"),
+        );
+      }
+      const question = record ? "Discard changes?" : "Discard this new record?";
+      if (!confirm(`${question}\n\nYou will lose ${lose.join(" and ")}.`)) return;
+    }
+
+    if (record && addedThisVisit.size > 0) {
+      busy = true;
+      renderPhotos();
+      setStatus("Deleting photos…");
+      try {
+        for (const photoId of [...addedThisVisit]) {
+          record = await deletePhoto(record.id, photoId);
+          addedThisVisit.delete(photoId);
+        }
+      } catch (err) {
+        handleSessionExpired(err);
+        busy = false;
+        if (isCurrent()) {
+          fill(record);
+          renderPhotos();
+          setStatus(`Couldn't delete the photos: ${errorMessage(err)}`, true);
+        }
+        return;
       }
     }
+
+    for (const p of pending) URL.revokeObjectURL(p.url);
+    location.hash = "#/";
   }
 
   // ---- initial render -----------------------------------------------------
   if (!id) {
     stateSelect.value = "new";
     renderPhotos();
-    updateSaveButton();
     return;
   }
 
@@ -307,7 +415,6 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       fill(r);
       root.lastElementChild!.replaceWith(content);
       renderPhotos();
-      updateSaveButton();
     },
     (err: unknown) => {
       if (!isCurrent()) return;

@@ -132,6 +132,47 @@ a {
   cursor: default;
 }
 
+.btn-block {
+  flex: 1;
+  min-height: 48px;
+}
+
+/* Refresh: the label keeps its space while hidden, so the button never resizes. */
+.btn-refresh {
+  position: relative;
+}
+
+.btn-refresh .spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  visibility: hidden;
+  animation: spin 0.7s linear infinite;
+}
+
+.btn-refresh.is-loading .btn-label {
+  visibility: hidden;
+}
+
+.btn-refresh.is-loading .spinner {
+  visibility: visible;
+}
+
+.btn-refresh:disabled {
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---- list ---- */
 .record-list {
   list-style: none;
@@ -197,7 +238,7 @@ a {
   gap: 24px;
 }
 
-.record-form {
+.record-fields {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -227,16 +268,45 @@ a {
   color: var(--danger);
 }
 
+/* "$" inside the left edge of the cost input. */
+.input-prefix {
+  position: relative;
+  display: flex;
+}
+
+.input-prefix input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 28px;
+}
+
+.input-prefix-symbol {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.form-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .form-actions {
   display: flex;
-  align-items: center;
   gap: 12px;
 }
 
 .form-status {
   margin: 0;
+  min-height: 1.4em;
   font-size: 0.9rem;
   color: var(--muted);
+  text-align: center;
 }
 
 .form-status.error {
