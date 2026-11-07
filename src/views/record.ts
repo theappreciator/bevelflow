@@ -58,6 +58,12 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     text("email", "Email", { inputmode: "email", autocapitalize: "none", autocorrect: "off", spellcheck: "false" }),
     text("phone", "Phone", { inputmode: "tel" }),
   ];
+  // Show the phone in the same format as the list; tidy it when leaving the field.
+  const phoneInput = textFields.find(([key]) => key === "phone")![1];
+  phoneInput.addEventListener("blur", () => {
+    phoneInput.value = formatPhone(phoneInput.value);
+    onEdit();
+  });
   const costInput = h("input", {
     id: "estimatedCost",
     type: "text",
@@ -164,7 +170,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   }
 
   function fill(r: RecordDetail): void {
-    for (const [key, input] of textFields) input.value = r[key];
+    for (const [key, input] of textFields) input.value = key === "phone" ? formatPhone(r.phone) : r[key];
     costInput.value = r.estimatedCostCents === null ? "" : formatCents(r.estimatedCostCents);
     stateSelect.value = r.workflowState;
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
@@ -220,7 +226,9 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     if (!f || !record) return f;
     const diff: Partial<RecordFields> = {};
     for (const key of Object.keys(f) as (keyof RecordFields)[]) {
-      if (f[key] !== record[key]) (diff as Record<string, unknown>)[key] = f[key];
+      // Reformatting alone (e.g. 5558675309 -> (555) 867-5309) isn't a change.
+      const same = key === "phone" ? formatPhone(f.phone) === formatPhone(record.phone) : f[key] === record[key];
+      if (!same) (diff as Record<string, unknown>)[key] = f[key];
     }
     return diff;
   }
