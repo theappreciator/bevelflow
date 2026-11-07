@@ -7,6 +7,7 @@ import {
   type RecordDetail,
   type RecordFields,
   type RecordSummary,
+  type WorkflowEvent,
   type WorkflowState,
 } from "../shared/types";
 import { HttpError } from "./http";
@@ -109,7 +110,48 @@ export function toContactEvent(c: ContactEventRow): ContactEvent {
   return { id: c.id, kind: c.kind, target: c.target, createdAt: c.created_at, createdBy: c.created_by };
 }
 
-export function toDetail(r: RecordRow, photos: PhotoRow[], contacts: ContactEventRow[]): RecordDetail {
+export interface WorkflowEventRow {
+  id: string;
+  record_id: string;
+  from_state: WorkflowState | null;
+  to_state: WorkflowState;
+  created_at: number;
+  created_by: string;
+}
+
+/** How many workflow changes the record screen shows. */
+export const WORKFLOW_HISTORY_LIMIT = 200;
+
+/**
+ * Statement that logs a workflow change for `recordId` to `toState`, recording the
+ * state it had before. Run it in the same batch *before* the UPDATE: it reads the
+ * current state, and inserts nothing if the state isn't actually changing.
+ */
+export function logWorkflowChange(db: D1Database, recordId: string, toState: WorkflowState, user: string): D1PreparedStatement {
+  return db
+    .prepare(
+      `INSERT INTO workflow_events (id, record_id, from_state, to_state, created_at, created_by)
+       SELECT ?, id, workflow_state, ?, ?, ? FROM records WHERE id = ? AND workflow_state != ?`,
+    )
+    .bind(crypto.randomUUID(), toState, Date.now(), user, recordId, toState);
+}
+
+/** Statement that logs the state a new record was created in. */
+export function logWorkflowCreated(db: D1Database, recordId: string, state: WorkflowState, user: string, at: number): D1PreparedStatement {
+  return db
+    .prepare(
+      `INSERT INTO workflow_events (id, record_id, from_state, to_state, created_at, created_by)
+       VALUES (?, ?, NULL, ?, ?, ?)`,
+    )
+    .bind(crypto.randomUUID(), recordId, state, at, user);
+}
+
+export function toDetail(
+  r: RecordRow,
+  photos: PhotoRow[],
+  contacts: ContactEventRow[],
+  workflow: WorkflowEventRow[],
+): RecordDetail {
   return {
     id: r.id,
     publicId: r.public_id,
@@ -125,18 +167,35 @@ export function toDetail(r: RecordRow, photos: PhotoRow[], contacts: ContactEven
     updatedBy: r.updated_by,
     photos: photos.map((p): Photo => ({ id: p.id, createdAt: p.created_at, bytes: p.bytes })),
     contacts: contacts.map(toContactEvent),
+    workflowHistory: workflow.map(
+      (w): WorkflowEvent => ({
+        id: w.id,
+        fromState: w.from_state,
+        toState: w.to_state,
+        createdAt: w.created_at,
+        createdBy: w.created_by,
+      }),
+    ),
   };
 }
 
 export async function loadDetail(db: D1Database, id: string): Promise<RecordDetail> {
-  const [rec, photos, contacts] = await db.batch([
+  const [rec, photos, contacts, workflow] = await db.batch([
     db.prepare("SELECT * FROM records WHERE id = ?").bind(id),
     db.prepare("SELECT * FROM photos WHERE record_id = ? ORDER BY created_at").bind(id),
     db
       .prepare("SELECT * FROM contact_events WHERE record_id = ? ORDER BY created_at DESC LIMIT ?")
       .bind(id, CONTACT_HISTORY_LIMIT),
+    db
+      .prepare("SELECT * FROM workflow_events WHERE record_id = ? ORDER BY created_at DESC LIMIT ?")
+      .bind(id, WORKFLOW_HISTORY_LIMIT),
   ]);
   const row = rec?.results[0] as RecordRow | undefined;
   if (!row) throw new HttpError(404, "Record not found");
-  return toDetail(row, (photos?.results ?? []) as PhotoRow[], (contacts?.results ?? []) as ContactEventRow[]);
+  return toDetail(
+    row,
+    (photos?.results ?? []) as PhotoRow[],
+    (contacts?.results ?? []) as ContactEventRow[],
+    (workflow?.results ?? []) as WorkflowEventRow[],
+  );
 }

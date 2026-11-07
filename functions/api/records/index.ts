@@ -1,6 +1,6 @@
 import type { Handler } from "../../../server/env";
 import { errorResponse, json, readJson } from "../../../server/http";
-import { loadDetail, parseFields, toSummary, type SummaryRow } from "../../../server/records";
+import { loadDetail, logWorkflowCreated, parseFields, toSummary, type SummaryRow } from "../../../server/records";
 import { insertWithUniquePublicId } from "../../../server/publicIds";
 
 const LIST_LIMIT = 500;
@@ -35,9 +35,11 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
                             workflow_state, created_at, updated_at, created_by, updated_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
+    const state = f.workflowState ?? "new";
+    // Record + its first workflow-history entry, in one transaction.
     await insertWithUniquePublicId(env.DB, (publicId) =>
-      insert
-        .bind(
+      env.DB.batch([
+        insert.bind(
           id,
           publicId,
           f.firstName ?? "",
@@ -45,13 +47,14 @@ export const onRequestPost: Handler = async ({ env, request, data }) => {
           f.email ?? "",
           f.phone ?? "",
           f.estimatedCostCents ?? null,
-          f.workflowState ?? "new",
+          state,
           now,
           now,
           data.userEmail,
           data.userEmail,
-        )
-        .run(),
+        ),
+        logWorkflowCreated(env.DB, id, state, data.userEmail, now),
+      ]),
     );
     return json(await loadDetail(env.DB, id), 201);
   } catch (err) {

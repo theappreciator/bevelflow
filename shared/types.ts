@@ -59,6 +59,17 @@ export interface RecordDetail extends RecordFields {
   photos: Photo[];
   /** Email/Call button taps, newest first. */
   contacts: ContactEvent[];
+  /** Workflow state changes, newest first. */
+  workflowHistory: WorkflowEvent[];
+}
+
+export interface WorkflowEvent {
+  id: string;
+  /** null when the record was created in `toState`. */
+  fromState: WorkflowState | null;
+  toState: WorkflowState;
+  createdAt: number;
+  createdBy: string;
 }
 
 export type ContactKind = "email" | "call";

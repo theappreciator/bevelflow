@@ -6,6 +6,7 @@ import {
   MAX_PHOTOS_PER_RECORD,
   photoUrl,
   WORKFLOW_STATES,
+  workflowLabel,
   type RecordDetail,
   type RecordFields,
   type WorkflowState,
@@ -15,7 +16,7 @@ import { qrSvg } from "../qr";
 import type { ContactEvent } from "../../shared/types";
 import { formatPhone } from "../phone";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
-import { contactButton, contactIcon } from "./contact";
+import { contactButton, contactIcon, workflowIcon } from "./contact";
 
 type TextKey = "firstName" | "lastName" | "email" | "phone";
 
@@ -99,6 +100,14 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const qrBox = h("div", { class: "record-qr", role: "img", hidden: true });
   let qrFor = "";
 
+  const workflowList = h("ul", { class: "contact-list" });
+  const workflowSection = h(
+    "section",
+    { class: "workflow-history", hidden: true },
+    h("div", { class: "section-head" }, h("h2", null, "Workflow history")),
+    workflowList,
+  );
+
   const contactButtons = h("div", { class: "record-actions" });
   const contactList = h("ul", { class: "contact-list" });
   const contactSection = h(
@@ -150,6 +159,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       ),
     ),
     h("section", { class: "photos" }, photoHeading, photoGrid, photoError, fileInput),
+    workflowSection,
     contactSection,
     meta,
     h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
@@ -203,10 +213,39 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
       qrBox.setAttribute("aria-label", `QR code for record ${formatPublicId(r.publicId)}`);
       qrBox.hidden = false;
     }
+    renderWorkflow(r);
     renderContacts(r);
     meta.replaceChildren(
       h("div", null, `Created ${formatDateTime(r.createdAt)}`, r.createdBy ? ` by ${r.createdBy}` : ""),
       h("div", null, `Last modified ${formatDateTime(r.updatedAt)}`, r.updatedBy ? ` by ${r.updatedBy}` : ""),
+    );
+  }
+
+  /** Log of workflow state changes, newest first. */
+  function renderWorkflow(r: RecordDetail): void {
+    workflowSection.hidden = false;
+    workflowList.replaceChildren(
+      ...(r.workflowHistory.length === 0
+        ? [h("li", { class: "muted contact-empty" }, "No workflow changes recorded yet.")]
+        : r.workflowHistory.map((w) =>
+            h(
+              "li",
+              { class: "contact-item" },
+              h("span", { class: "contact-chip is-workflow" }, workflowIcon()),
+              h(
+                "div",
+                { class: "contact-text" },
+                h(
+                  "span",
+                  null,
+                  w.fromState === null
+                    ? `Created as ${workflowLabel(w.toState)}`
+                    : `${workflowLabel(w.fromState)} → ${workflowLabel(w.toState)}`,
+                ),
+                h("span", { class: "muted" }, formatDateTime(w.createdAt), w.createdBy ? ` · ${w.createdBy}` : ""),
+              ),
+            ),
+          )),
     );
   }
 

@@ -355,6 +355,16 @@ a {
   --btn-bg: #16a34a;
 }
 
+.contact-chip.is-workflow {
+  --btn-bg: #4f46e5;
+}
+
+/* Workflow history sits right above Contact history; no buttons in its heading,
+   so give the heading the same height as the one with buttons. */
+.workflow-history .section-head {
+  min-height: 48px;
+}
+
 .contact-chip svg {
   width: 18px;
   height: 18px;

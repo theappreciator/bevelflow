@@ -12,10 +12,19 @@ const ICONS: Record<ContactKind, string[]> = {
 
 /** 24px outline icon. */
 export function contactIcon(kind: ContactKind): SVGSVGElement {
+  return pathIcon(ICONS[kind]);
+}
+
+/** Arrow-into-box icon for workflow state changes. */
+export function workflowIcon(): SVGSVGElement {
+  return pathIcon(["M4 12h11", "m11 7 5 5-5 5", "M20 5v14"]);
+}
+
+function pathIcon(paths: string[]): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
   svg.setAttribute("aria-hidden", "true");
-  for (const d of ICONS[kind]) {
+  for (const d of paths) {
     const p = document.createElementNS(SVG_NS, "path");
     p.setAttribute("d", d);
     svg.append(p);
