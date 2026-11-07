@@ -62,7 +62,7 @@ export interface RecordRow {
 }
 
 export interface SummaryRow
-  extends Pick<RecordRow, "id" | "first_name" | "last_name" | "phone" | "workflow_state" | "created_at" | "updated_at"> {
+  extends Pick<RecordRow, "id" | "first_name" | "last_name" | "email" | "phone" | "workflow_state" | "created_at" | "updated_at"> {
   photo_count: number;
   thumbnail_photo_id: string | null;
 }
@@ -80,6 +80,7 @@ export function toSummary(r: SummaryRow): RecordSummary {
     id: r.id,
     firstName: r.first_name,
     lastName: r.last_name,
+    email: r.email,
     phone: r.phone,
     workflowState: r.workflow_state,
     createdAt: r.created_at,

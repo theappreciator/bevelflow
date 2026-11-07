@@ -34,7 +34,10 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  /* dvh = the height actually visible. Plain 100vh on iPhone is the height with the
+     toolbars hidden, which pushed the version footer below the screen. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -183,19 +186,80 @@ a {
   gap: 8px;
 }
 
+.record-item {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .record-row {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   color: inherit;
   text-decoration: none;
 }
 
+.record-actions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding-right: 8px;
+}
+
+.contact-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--primary);
+}
+
+.contact-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contact-btn.is-disabled {
+  color: var(--muted);
+  opacity: 0.35;
+}
+
+.thumb-wrap {
+  position: relative;
+  flex: none;
+}
+
+.thumb-count {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+}
+
 .thumb {
+  display: block;
   flex: none;
   width: 64px;
   height: 64px;

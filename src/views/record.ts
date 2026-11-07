@@ -333,17 +333,16 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
         }
         pending.length = 0;
         if (failed) alert(`${plural(failed, "photo")} failed to upload. You can add them again on the record.`);
-        location.replace(`#/records/${encodeURIComponent(created.id)}`);
+        location.replace("#/");
         return;
       }
       const diff = changes();
       if (diff && Object.keys(diff).length) {
-        record = await updateRecord(record.id, diff);
-        if (!isCurrent()) return;
-        fill(record);
+        await updateRecord(record.id, diff);
       }
       addedThisVisit.clear();
-      setStatus("Saved");
+      if (isCurrent()) location.hash = "#/";
+      return;
     } catch (err) {
       handleSessionExpired(err);
       setStatus(errorMessage(err), true);

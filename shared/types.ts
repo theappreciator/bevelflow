@@ -38,6 +38,7 @@ export interface RecordSummary {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
   workflowState: WorkflowState;
   createdAt: number;
