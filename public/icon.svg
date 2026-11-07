@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#1f2937"/>
-  <path d="M128 352 L256 128 L384 352 Z" fill="none" stroke="#f9fafb" stroke-width="40" stroke-linejoin="round"/>
-  <path d="M176 352 L336 352" stroke="#60a5fa" stroke-width="40" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g transform="translate(-76.8 -76.8) scale(1.3)">
+    <polygon points="192,120 320,120 305,156 207,156" fill="#fff" fill-opacity="0.9"/><polygon points="320,120 392,192 356,207 305,156" fill="#fff" fill-opacity="0.55"/><polygon points="392,192 392,320 356,305 356,207" fill="#fff" fill-opacity="0.35"/><polygon points="392,320 320,392 305,356 356,305" fill="#fff" fill-opacity="0.18"/><polygon points="320,392 192,392 207,356 305,356" fill="#fff" fill-opacity="0.3"/><polygon points="192,392 120,320 156,305 207,356" fill="#fff" fill-opacity="0.5"/><polygon points="120,320 120,192 156,207 156,305" fill="#fff" fill-opacity="0.75"/><polygon points="120,192 192,120 207,156 156,207" fill="#fff" fill-opacity="0.97"/>
+    <polygon points="207,156 305,156 356,207 356,305 305,356 207,356 156,305 156,207" fill="#fff"/>
+    <path d="M184 280 C216 216 248 216 256 256 C264 296 296 296 328 232" fill="none" stroke="url(#bg)" stroke-width="40" stroke-linecap="round"/>
+  </g>
 </svg>

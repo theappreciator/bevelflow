@@ -1,13 +1,13 @@
 {
   "name": "bevelflow",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Bevelflow PWA",
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
-    "generate-icons": "pwa-assets-generator",
+    "generate-icons": "node scripts/generate-icons.mjs",
     "dev:api": "wrangler pages dev --port 8788",
     "db:migrate:local": "wrangler d1 migrations apply bevelflow-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply bevelflow-db --remote"
@@ -27,7 +27,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261107.1",
     "@types/node": "^26.6.6",
-    "@vite-pwa/assets-generator": "^2.0.0",
+    "sharp": "^0.35.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "vite-plugin-pwa": "^2.0.0",

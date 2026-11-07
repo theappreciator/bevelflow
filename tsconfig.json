@@ -15,5 +15,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "shared", "vite.config.ts", "pwa-assets.config.ts"]
+  "include": ["src", "shared", "vite.config.ts"]
 }

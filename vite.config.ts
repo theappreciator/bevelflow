@@ -42,16 +42,21 @@ export default defineConfig({
       // cookies gets redirected to the Access login and the app can't install,
       // so the manifest link must send credentials.
       useCredentials: true,
-      pwaAssets: { config: true },
+      // Icons are made by `npm run generate-icons` (scripts/generate-icons.mjs) into public/.
       manifest: {
         name: "Bevelflow",
         short_name: "Bevelflow",
         description: "Bevelflow",
-        theme_color: "#1f2937",
+        theme_color: "#4f46e5",
         background_color: "#ffffff",
         display: "standalone",
         start_url: "/",
         scope: "/",
+        icons: [
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
