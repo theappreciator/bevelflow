@@ -22,6 +22,17 @@ export function generatePublicId(): string {
   return id;
 }
 
+/** "k7mx-4qpa", "K7MX 4QPA" -> "K7MX4QPA"; null if it can't be a public ID. */
+export function normalizePublicId(input: string): string | null {
+  const id = input.toUpperCase().replace(/[\s-]/g, "");
+  return id.length === PUBLIC_ID_LENGTH && [...id].every((c) => PUBLIC_ID_ALPHABET.includes(c)) ? id : null;
+}
+
+/** Path of the QR-code link for a record. /q/ is a redirect we control (functions/q/[publicId].ts). */
+export function qrPath(publicId: string): string {
+  return `/q/${publicId}`;
+}
+
 /** "K7MX4QPA" -> "K7MX-4QPA" */
 export function formatPublicId(id: string): string {
   return id.length === PUBLIC_ID_LENGTH ? `${id.slice(0, 4)}-${id.slice(4)}` : id;

@@ -10,7 +10,8 @@ import {
   type RecordFields,
   type WorkflowState,
 } from "../../shared/types";
-import { formatPublicId } from "../../shared/publicId";
+import { formatPublicId, qrPath } from "../../shared/publicId";
+import { qrSvg } from "../qr";
 import type { ContactEvent } from "../../shared/types";
 import { formatPhone } from "../phone";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
@@ -89,6 +90,9 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const meta = h("div", { class: "record-meta muted" });
   const publicIdValue = h("span", { class: "public-id-value" });
   const publicIdRow = h("div", { class: "public-id", hidden: true }, h("span", { class: "muted" }, "Record ID"), publicIdValue);
+  /** QR code linking to /q/<public id>; drawn in the browser, never stored. */
+  const qrBox = h("div", { class: "record-qr", role: "img", hidden: true });
+  let qrFor = "";
 
   const contactButtons = h("div", { class: "record-actions" });
   const contactList = h("ul", { class: "contact-list" });
@@ -139,6 +143,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     contactSection,
     meta,
     h("div", { class: "form-footer" }, status, h("div", { class: "form-actions" }, saveBtn, cancelBtn)),
+    qrBox,
   );
 
   const back = h(
@@ -176,6 +181,12 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
     publicIdValue.textContent = formatPublicId(r.publicId);
     publicIdRow.hidden = !r.publicId;
+    if (r.publicId && r.publicId !== qrFor) {
+      qrFor = r.publicId;
+      qrBox.innerHTML = qrSvg(location.origin + qrPath(r.publicId), "/icon.svg");
+      qrBox.setAttribute("aria-label", `QR code for record ${formatPublicId(r.publicId)}`);
+      qrBox.hidden = false;
+    }
     renderContacts(r);
     meta.replaceChildren(
       h("div", null, `Created ${formatDateTime(r.createdAt)}`, r.createdBy ? ` by ${r.createdBy}` : ""),
