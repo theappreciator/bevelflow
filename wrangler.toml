@@ -5,8 +5,9 @@ pages_build_output_dir = "dist"
 compatibility_date = "2026-11-01"
 
 [vars]
-# Cloudflare Access: used by functions/api/_middleware.ts to verify the login token.
-ACCESS_TEAM_DOMAIN = "white-sea-f1e0.cloudflareaccess.com"
+# Cloudflare Access: used by server/auth.ts to verify the login token. ACCESS_TEAM_DOMAIN
+# may list several comma-separated team domains (used while renaming the team domain).
+ACCESS_TEAM_DOMAIN = "white-sea-f1e0.cloudflareaccess.com, bevelflow.cloudflareaccess.com"
 ACCESS_AUD = "e6a46e7c99e339a6f4b6afb996d5155e3cf08fc40982a783c19f3ced8d6f03d1"
 
 [[d1_databases]]
