@@ -9,7 +9,7 @@ import {
 } from "../api";
 import { append, formatDateTime, h } from "../dom";
 import { formatPublicId } from "../../shared/publicId";
-import { ESTIMATED_MAX_IMAGES, ESTIMATED_PHOTO_BYTES } from "../../shared/capacity";
+import { ESTIMATED_MAX_IMAGES, ESTIMATED_PHOTO_BYTES, FREE_R2_BYTES } from "../../shared/capacity";
 import { workflowLabel, type AdminImage, type AdminRecord } from "../../shared/types";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
 
@@ -73,6 +73,25 @@ const formatPercent = (pct: number): string => `${pct > 0 && pct < 0.1 ? pct.toF
 const kb = (bytes: number): string =>
   bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1000))} KB`;
 
+/** "Free-tier space used (estimate)" card: progress bar, bold percent, figures and assumptions. */
+function capacityCard(pct: number, figures: string, note: string): HTMLElement {
+  const fill = h("span", { class: "capacity-fill" });
+  // Set through the style object (allowed by the CSP, unlike a style="" attribute).
+  fill.style.width = `${Math.max(Math.min(100, pct), 0.5)}%`;
+  return h(
+    "section",
+    { class: "admin-card" },
+    h("h2", null, "Free-tier space used (estimate)"),
+    h(
+      "div",
+      { class: "capacity-bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": pct.toFixed(2) },
+      fill,
+    ),
+    h("p", { class: "capacity-figures" }, h("strong", null, formatPercent(pct)), ` · ${figures}`),
+    h("p", { class: "muted small" }, note),
+  );
+}
+
 /** Runs an admin action with the button disabled; reloads the page section afterwards. */
 async function act(button: HTMLButtonElement, work: () => Promise<unknown>, reload: () => void): Promise<void> {
   button.disabled = true;
@@ -97,36 +116,16 @@ async function loadRecords(body: HTMLElement, isCurrent: () => boolean): Promise
     const pct = capacity.percentUsed;
     const a = capacity.assumptions;
     body.replaceChildren(
-      h(
-        "section",
-        { class: "admin-card" },
-        h("h2", null, "Free-tier space used (estimate)"),
-        h(
-          "div",
-          { class: "capacity-bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": pct.toFixed(2) },
-          h("span", { class: "capacity-fill", dataset: { pct: String(Math.min(100, pct)) } }),
-        ),
-        h(
-          "p",
-          { class: "capacity-figures" },
-          h("strong", null, formatPercent(pct)),
-          ` · ${capacity.recordCount.toLocaleString()} of ~${capacity.estimatedMaxRecords.toLocaleString()} records`,
-        ),
-        h(
-          "p",
-          { class: "muted small" },
-          `Assumes ${a.photosPerRecord} photos per record at ~${kb(a.photoBytes)} each and ~${kb(a.recordDbBytes)} of database per record, ` +
-            `against the free ${Math.round(a.freeR2Bytes / 1e9)} GB photo storage and ${Math.round(a.freeD1Bytes / 1e6)} MB database. Deleted records still count.`,
-        ),
+      capacityCard(
+        pct,
+        `${capacity.recordCount.toLocaleString()} of ~${capacity.estimatedMaxRecords.toLocaleString()} records`,
+        `Assumes ${a.photosPerRecord} photos per record at ~${kb(a.photoBytes)} each and ~${kb(a.recordDbBytes)} of database per record, ` +
+          `against the free ${Math.round(a.freeR2Bytes / 1e9)} GB photo storage and ${Math.round(a.freeD1Bytes / 1e6)} MB database. Deleted records still count.`,
       ),
       records.length === 0
         ? h("p", { class: "muted center" }, "No records.")
         : h("ul", { class: "admin-list" }, ...records.map((r) => recordRow(r, reload))),
     );
-    // Width set from data-pct so no inline style is needed (CSP blocks inline styles).
-    body.querySelectorAll<HTMLElement>(".capacity-fill").forEach((el) => {
-      el.style.width = `${Math.max(Number(el.dataset.pct), 0.5)}%`;
-    });
   } catch (err) {
     if (isCurrent()) failed(body, err);
   }
@@ -180,19 +179,13 @@ async function loadImages(body: HTMLElement, isCurrent: () => boolean): Promise<
     body.replaceChildren();
     append(
       body,
-      h(
-        "p",
-        { class: "admin-summary" },
-        // One inline span so the sentence wraps as text, not as separate flex items.
-        h(
-          "span",
-          null,
-          `${images.length} image${images.length === 1 ? "" : "s"} · ${kb(total)} · `,
-          h("strong", null, formatPercent((images.length / ESTIMATED_MAX_IMAGES) * 100)),
-          ` of free space (~${ESTIMATED_MAX_IMAGES.toLocaleString()} images at ~${kb(ESTIMATED_PHOTO_BYTES)})`,
-        ),
-        orphans ? h("span", { class: "badge badge-orphan" }, `⚠ ${orphans} orphaned`) : null,
+      capacityCard(
+        (images.length / ESTIMATED_MAX_IMAGES) * 100,
+        `${images.length.toLocaleString()} of ~${ESTIMATED_MAX_IMAGES.toLocaleString()} images`,
+        `Assumes ~${kb(ESTIMATED_PHOTO_BYTES)} per image (the average measured in production), against the free ` +
+          `${Math.round(FREE_R2_BYTES / 1e9)} GB photo storage. These ${images.length} image${images.length === 1 ? "" : "s"} use ${kb(total)}.`,
       ),
+      orphans ? h("p", { class: "admin-summary" }, h("span", { class: "badge badge-orphan" }, `⚠ ${orphans} orphaned`)) : null,
       images.length === 0
         ? h("p", { class: "muted center" }, "No images.")
         : h("ul", { class: "admin-list" }, ...images.map((i) => imageRow(i, reload))),

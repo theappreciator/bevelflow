@@ -25,6 +25,7 @@ export function renderList(root: HTMLElement): void {
         { class: "brand" },
         h("img", { class: "brand-logo", src: "/icon.svg", alt: "", width: 32, height: 32 }),
         "Bevelflow",
+        h("a", { class: "admin-link", href: "#/admin", "aria-label": "Admin", title: "Admin" }, "🛡"),
       ),
       h(
         "div",
