@@ -9,6 +9,9 @@ compatibility_date = "2026-11-01"
 # may list several comma-separated team domains (used while renaming the team domain).
 ACCESS_TEAM_DOMAIN = "bevelflow.cloudflareaccess.com"
 ACCESS_AUD = "e6a46e7c99e339a6f4b6afb996d5155e3cf08fc40982a783c19f3ced8d6f03d1"
+# Admin > People with access reads the Access app's policy (needs the CF_API_TOKEN secret).
+CF_ACCOUNT_ID = "8bb0ac7d9e8aeb8cff80af948abea2f9"
+ACCESS_APP_ID = "03bfa9a5-2d7f-495e-ae09-de0fd3c706e9"
 
 [[d1_databases]]
 binding = "DB"

@@ -8,6 +8,7 @@ import {
   type RecordDetail,
   type RecordFields,
   type RecordSummary,
+  type HistoryState,
   type WorkflowEvent,
   type WorkflowState,
 } from "../shared/types";
@@ -63,6 +64,8 @@ export interface RecordRow {
   estimated_cost_cents: number | null;
   workflow_state: WorkflowState;
   notes: string;
+  deleted_at: number | null;
+  deleted_by: string;
   created_at: number;
   updated_at: number;
   created_by: string;
@@ -118,8 +121,8 @@ export function toContactEvent(c: ContactEventRow): ContactEvent {
 export interface WorkflowEventRow {
   id: string;
   record_id: string;
-  from_state: WorkflowState | null;
-  to_state: WorkflowState;
+  from_state: HistoryState | null;
+  to_state: HistoryState;
   created_at: number;
   created_by: string;
 }
@@ -167,6 +170,8 @@ export function toDetail(
     estimatedCostCents: r.estimated_cost_cents,
     workflowState: r.workflow_state,
     notes: r.notes,
+    deletedAt: r.deleted_at,
+    deletedBy: r.deleted_by,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     createdBy: r.created_by,
@@ -204,4 +209,23 @@ export async function loadDetail(db: D1Database, id: string): Promise<RecordDeta
     (contacts?.results ?? []) as ContactEventRow[],
     (workflow?.results ?? []) as WorkflowEventRow[],
   );
+}
+
+/**
+ * Permanently deletes a record: its photo files, photos, history and the record row.
+ * Returns false if there was no such record.
+ */
+export async function hardDeleteRecord(db: D1Database, photos: R2Bucket, id: string): Promise<boolean> {
+  const exists = await db.prepare("SELECT 1 FROM records WHERE id = ?").bind(id).first();
+  if (!exists) return false;
+  const { results } = await db.prepare("SELECT r2_key FROM photos WHERE record_id = ?").bind(id).all<{ r2_key: string }>();
+  const keys = results.map((p) => p.r2_key);
+  if (keys.length) await photos.delete(keys);
+  await db.batch([
+    db.prepare("DELETE FROM photos WHERE record_id = ?").bind(id),
+    db.prepare("DELETE FROM contact_events WHERE record_id = ?").bind(id),
+    db.prepare("DELETE FROM workflow_events WHERE record_id = ?").bind(id),
+    db.prepare("DELETE FROM records WHERE id = ?").bind(id),
+  ]);
+  return true;
 }

@@ -100,6 +100,8 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   const cancelBtn = h("button", { class: "btn btn-block", type: "button", onclick: () => void cancel() }, "Cancel");
   const status = h("p", { class: "form-status", role: "status" });
   const meta = h("div", { class: "record-meta muted" });
+  /** Shown when the record is soft-deleted. */
+  const deletedBanner = h("p", { class: "record-deleted-banner", role: "status", hidden: true });
   const publicIdValue = h("span", { class: "public-id-value" });
   const publicIdRow = h("div", { class: "public-id", hidden: true }, h("span", { class: "muted" }, "Record ID"), publicIdValue);
   /** QR code linking to /q/<public id>; drawn in the browser, never stored. */
@@ -160,6 +162,7 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
     h(
       "div",
       { class: "record-fields" },
+      deletedBanner,
       publicIdRow,
       h(
         "label",
@@ -227,6 +230,14 @@ export function renderRecord(root: HTMLElement, id: string | null, isCurrent: ()
   /** Refresh what comes from the server (title, ID, QR, contacts, dates) without touching the inputs. */
   function showSaved(r: RecordDetail): void {
     title.textContent = [r.firstName, r.lastName].filter(Boolean).join(" ") || "Record";
+    deletedBanner.hidden = r.deletedAt === null;
+    if (r.deletedAt !== null) {
+      deletedBanner.replaceChildren(
+        h("strong", null, "Deleted. "),
+        `Hidden from the main list since ${formatDateTime(r.deletedAt)}${r.deletedBy ? ` (by ${r.deletedBy})` : ""}. `,
+        h("a", { href: "#/admin/records" }, "Restore it in Admin"),
+      );
+    }
     publicIdValue.textContent = formatPublicId(r.publicId);
     publicIdRow.hidden = !r.publicId;
     if (r.publicId && r.publicId !== qrFor) {

@@ -1,6 +1,7 @@
 import "./style.css";
 import { registerSW } from "virtual:pwa-register";
 import { appVersion, formatVersion } from "./version";
+import { renderAdmin } from "./views/admin";
 import { renderList } from "./views/list";
 import { renderRecord } from "./views/record";
 
@@ -12,7 +13,7 @@ const app = document.querySelector<HTMLElement>("#app")!;
 const versionEl = document.querySelector<HTMLElement>("#app-version");
 if (versionEl) versionEl.textContent = formatVersion();
 
-// Hash routes: #/ (list), #/new, #/records/<id>
+// Hash routes: #/ (list), #/new, #/records/<id>, #/admin[/records|images|users]
 let navigation = 0;
 
 function route(): void {
@@ -23,7 +24,9 @@ function route(): void {
   document.getElementById("print-label")?.remove(); // only the record screen has one
 
   const recordMatch = /^\/records\/([^/]+)$/.exec(path);
-  if (path === "/new") renderRecord(app, null, isCurrent);
+  const adminMatch = /^\/admin(?:\/(records|images|users))?$/.exec(path);
+  if (adminMatch) renderAdmin(app, (adminMatch[1] as "records" | "images" | "users" | undefined) ?? "home", isCurrent);
+  else if (path === "/new") renderRecord(app, null, isCurrent);
   else if (recordMatch?.[1]) renderRecord(app, decodeURIComponent(recordMatch[1]), isCurrent);
   else renderList(app);
 }

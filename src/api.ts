@@ -1,4 +1,13 @@
-import type { ContactEvent, ContactKind, RecordDetail, RecordFields, RecordSummary } from "../shared/types";
+import type {
+  AdminImagesResponse,
+  AdminRecordsResponse,
+  AdminUsersResponse,
+  ContactEvent,
+  ContactKind,
+  RecordDetail,
+  RecordFields,
+  RecordSummary,
+} from "../shared/types";
 
 export class ApiError extends Error {
   constructor(
@@ -81,4 +90,38 @@ export function deletePhoto(recordId: string, photoId: string): Promise<RecordDe
   return request(`/api/records/${encodeURIComponent(recordId)}/photos/${encodeURIComponent(photoId)}`, {
     method: "DELETE",
   });
+}
+
+// ---- Admin --------------------------------------------------------------------
+
+export function adminRecords(): Promise<AdminRecordsResponse> {
+  return request("/api/admin/records");
+}
+
+/** Soft delete ("Deleted" status) or restore. */
+export function adminSetDeleted(recordId: string, deleted: boolean): Promise<{ ok: true }> {
+  return request(`/api/admin/records/${encodeURIComponent(recordId)}/${deleted ? "delete" : "restore"}`, {
+    method: "POST",
+  });
+}
+
+/** Permanently deletes the record, its photos and history. */
+export function adminHardDelete(recordId: string): Promise<{ ok: true }> {
+  return request(`/api/admin/records/${encodeURIComponent(recordId)}`, { method: "DELETE" });
+}
+
+export function adminImages(): Promise<AdminImagesResponse> {
+  return request("/api/admin/images");
+}
+
+export function adminImageUrl(key: string): string {
+  return `/api/admin/images/file?key=${encodeURIComponent(key)}`;
+}
+
+export function adminDeleteImage(key: string): Promise<{ ok: true }> {
+  return request(`/api/admin/images?key=${encodeURIComponent(key)}`, { method: "DELETE" });
+}
+
+export function adminUsers(): Promise<AdminUsersResponse> {
+  return request("/api/admin/users");
 }

@@ -12,6 +12,14 @@ export const WORKFLOW_STATES = [
 
 export type WorkflowState = (typeof WORKFLOW_STATES)[number]["value"];
 
+/**
+ * Soft-deleted is shown as a status ("Deleted") but stored separately (records.deleted_at),
+ * so it can sit on top of any workflow state and be restored to it.
+ */
+export const DELETED = "deleted" as const;
+/** A state as it appears in workflow history: a workflow state or "deleted". */
+export type HistoryState = WorkflowState | typeof DELETED;
+
 export const MAX_PHOTOS_PER_RECORD = 5;
 export const MAX_TEXT_LENGTH = 500;
 /** Notes are free-form and can be much longer than the other text fields. */
@@ -65,6 +73,9 @@ export interface RecordDetail extends RecordFields {
   photos: Photo[];
   /** Email/Call button taps, newest first. */
   contacts: ContactEvent[];
+  /** Set when the record is soft-deleted (hidden from the main list). */
+  deletedAt: number | null;
+  deletedBy: string;
   /** Workflow state changes, newest first. */
   workflowHistory: WorkflowEvent[];
 }
@@ -72,8 +83,8 @@ export interface RecordDetail extends RecordFields {
 export interface WorkflowEvent {
   id: string;
   /** null when the record was created in `toState`. */
-  fromState: WorkflowState | null;
-  toState: WorkflowState;
+  fromState: HistoryState | null;
+  toState: HistoryState;
   createdAt: number;
   createdBy: string;
 }
@@ -93,11 +104,71 @@ export function isWorkflowState(v: unknown): v is WorkflowState {
   return WORKFLOW_STATES.some((s) => s.value === v);
 }
 
-export function workflowLabel(v: WorkflowState): string {
+export function workflowLabel(v: HistoryState): string {
+  if (v === DELETED) return "Deleted";
   return WORKFLOW_STATES.find((s) => s.value === v)?.label ?? v;
 }
 
 /** URL the app uses to load a stored photo. */
 export function photoUrl(recordId: string, photoId: string): string {
   return `/api/records/${encodeURIComponent(recordId)}/photos/${encodeURIComponent(photoId)}`;
+}
+
+// ---- Admin --------------------------------------------------------------------
+
+export interface AdminRecord {
+  id: string;
+  publicId: string;
+  firstName: string;
+  lastName: string;
+  workflowState: WorkflowState;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt: number | null;
+  photoCount: number;
+  photoBytes: number;
+}
+
+export interface AdminRecordsResponse {
+  records: AdminRecord[];
+  capacity: {
+    recordCount: number;
+    estimatedMaxRecords: number;
+    percentUsed: number;
+    assumptions: { photosPerRecord: number; photoBytes: number; recordDbBytes: number; freeR2Bytes: number; freeD1Bytes: number };
+  };
+}
+
+export interface AdminImage {
+  /** Storage key, e.g. records/<record id>/<photo id>.jpg */
+  key: string;
+  bytes: number;
+  uploadedAt: number;
+  /** The app's photo entry; null when the file is orphaned (no record shows it). */
+  photoId: string | null;
+  recordId: string | null;
+  recordPublicId: string | null;
+  recordName: string | null;
+  recordDeleted: boolean;
+}
+
+export interface AdminImagesResponse {
+  images: AdminImage[];
+  /** Photo entries whose file is missing from storage (shown as broken in the app). */
+  missingFiles: { photoId: string; recordId: string; recordPublicId: string; key: string }[];
+}
+
+/** One rule from the Cloudflare Access policy that decides who can sign in. */
+export interface AccessRule {
+  policy: string;
+  decision: string;
+  /** "email", "email_domain", "everyone", or another Access rule type. */
+  type: string;
+  value: string;
+}
+
+export interface AdminUsersResponse {
+  configured: boolean;
+  rules: AccessRule[];
+  message?: string;
 }

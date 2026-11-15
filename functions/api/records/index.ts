@@ -13,6 +13,7 @@ export const onRequestGet: Handler = async ({ env }) => {
               (SELECT COUNT(*) FROM photos p WHERE p.record_id = r.id) AS photo_count,
               (SELECT p.id FROM photos p WHERE p.record_id = r.id ORDER BY p.created_at LIMIT 1) AS thumbnail_photo_id
          FROM records r
+        WHERE r.deleted_at IS NULL
         ORDER BY r.created_at DESC
         LIMIT ?`,
     )
