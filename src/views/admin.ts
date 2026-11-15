@@ -9,6 +9,7 @@ import {
 } from "../api";
 import { append, formatDateTime, h } from "../dom";
 import { formatPublicId } from "../../shared/publicId";
+import { ESTIMATED_MAX_IMAGES, ESTIMATED_PHOTO_BYTES } from "../../shared/capacity";
 import { workflowLabel, type AdminImage, type AdminRecord } from "../../shared/types";
 import { errorMessage, handleSessionExpired, showPhoto } from "./common";
 
@@ -66,6 +67,9 @@ function failed(body: HTMLElement, err: unknown): void {
   body.replaceChildren(h("p", { class: "error center" }, errorMessage(err)));
 }
 
+/** 0.031 -> "0.03%", 12.34 -> "12.3%": small values keep two decimals so they don't read as 0. */
+const formatPercent = (pct: number): string => `${pct > 0 && pct < 0.1 ? pct.toFixed(2) : pct.toFixed(1)}%`;
+
 const kb = (bytes: number): string =>
   bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1000))} KB`;
 
@@ -105,7 +109,7 @@ async function loadRecords(body: HTMLElement, isCurrent: () => boolean): Promise
         h(
           "p",
           { class: "capacity-figures" },
-          h("strong", null, `${pct < 0.1 && pct > 0 ? pct.toFixed(2) : pct.toFixed(1)}%`),
+          h("strong", null, formatPercent(pct)),
           ` · ${capacity.recordCount.toLocaleString()} of ~${capacity.estimatedMaxRecords.toLocaleString()} records`,
         ),
         h(
@@ -179,7 +183,14 @@ async function loadImages(body: HTMLElement, isCurrent: () => boolean): Promise<
       h(
         "p",
         { class: "admin-summary" },
-        `${images.length} image${images.length === 1 ? "" : "s"} · ${kb(total)}`,
+        // One inline span so the sentence wraps as text, not as separate flex items.
+        h(
+          "span",
+          null,
+          `${images.length} image${images.length === 1 ? "" : "s"} · ${kb(total)} · `,
+          h("strong", null, formatPercent((images.length / ESTIMATED_MAX_IMAGES) * 100)),
+          ` of free space (~${ESTIMATED_MAX_IMAGES.toLocaleString()} images at ~${kb(ESTIMATED_PHOTO_BYTES)})`,
+        ),
         orphans ? h("span", { class: "badge badge-orphan" }, `⚠ ${orphans} orphaned`) : null,
       ),
       images.length === 0

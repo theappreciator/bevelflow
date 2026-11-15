@@ -21,6 +21,13 @@ export const FREE_R2_BYTES = 10_000_000_000; // 10 GB
 /** Cloudflare free tier: maximum size of one D1 database. */
 export const FREE_D1_BYTES = 500_000_000; // 500 MB
 
+/**
+ * Estimated number of images that fit in the free R2 storage, for the "% of free space"
+ * figure on the Admin images page (image count / this). Re-measured 2026-11-15:
+ * 7 images, average ~428 KB (107 KB to 1.2 MB), so ESTIMATED_PHOTO_BYTES still holds.
+ */
+export const ESTIMATED_MAX_IMAGES = Math.floor(FREE_R2_BYTES / ESTIMATED_PHOTO_BYTES);
+
 /** Estimated number of records that fit in the free tier (the tighter of R2 and D1). */
 export const ESTIMATED_MAX_RECORDS = Math.floor(
   Math.min(
