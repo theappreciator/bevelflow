@@ -21,6 +21,11 @@ export function errorResponse(err: unknown): Response {
 }
 
 export async function readJson(request: Request): Promise<Record<string, unknown>> {
+  // Must be declared as JSON: a cross-site form can only send text/plain or form
+  // types without the browser asking permission first, so this also helps block CSRF.
+  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+    throw new HttpError(415, "Body must be sent as application/json");
+  }
   let body: unknown;
   try {
     body = await request.json();
