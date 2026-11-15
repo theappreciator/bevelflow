@@ -15,7 +15,17 @@ export function handleSessionExpired(err: unknown): boolean {
         { class: "session-banner", role: "alert" },
         err.message,
         " ",
-        h("button", { class: "btn", type: "button", onclick: () => location.reload() }, "Reload"),
+        h(
+          "button",
+          {
+            class: "btn",
+            type: "button",
+            // Not location.reload(): the offline copy would load the app again without
+            // ever showing the login page. /login always goes through sign-in.
+            onclick: () => location.assign(`/login?next=${encodeURIComponent(location.hash || "#/")}`),
+          },
+          "Sign in",
+        ),
       ),
     );
   }

@@ -62,8 +62,9 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
         // Never serve the cached app shell for Cloudflare Access routes
         // (login, logout, auth callback); they must reach the network.
-        // Same for the API (always live data) and /q/ QR links (a server-side redirect).
-        navigateFallbackDenylist: [/^\/cdn-cgi\//, /^\/api\//, /^\/q\//],
+        // Same for the API (always live data), /q/ QR links (a server-side redirect) and
+        // /login (must reach Cloudflare Access so an expired session can sign in again).
+        navigateFallbackDenylist: [/^\/cdn-cgi\//, /^\/api\//, /^\/q\//, /^\/login/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith("/cdn-cgi/") || url.pathname.startsWith("/api/"),

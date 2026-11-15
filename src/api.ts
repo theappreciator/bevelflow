@@ -12,7 +12,7 @@ export class ApiError extends Error {
 /** The Cloudflare Access login has expired; a full page reload signs the user back in. */
 export class SessionExpiredError extends Error {
   constructor() {
-    super("Your sign-in has expired. Reload the page to sign in again.");
+    super("Your sign-in has expired. Tap Sign in to log in again.");
   }
 }
 
